@@ -1,0 +1,41 @@
+{
+    "trailingComma": "es5",
+    "tabWidth": 4,
+    "semi": false,
+    "singleQuote": true,
+    "arrowParens": "always",
+    "printWidth": 100,
+    "overrides": [
+        {
+            "files": ["*.scss", "*.*.scss", "*.css", "*.*.css"],
+            "options": {
+                "printWidth": 120,
+                "singleQuote": false,
+                "trailingComma": "es5"
+            }
+        }
+    ],
+    "plugins": ["./node_modules/@trivago/prettier-plugin-sort-imports"],
+    "importOrder": [
+        "^react$",
+        "<THIRD_PARTY_MODULES>",
+        "^components/atoms/(.*)$",
+        "^components/molecules/(.*)$",
+        "^components/organisms/(.*)$",
+        "^components/layouts/(.*)$",
+        "^components/templates/(.*)$",
+        "^components/pages/(.*)$",
+        "^components/(.*)$",
+        "^containers/(.*)$",
+        "^@(.*)$",
+        "^services/(.*)$",
+        "^helpers/(.*)$",
+        "^constants/(.*)$",
+        "^(../)",
+        "^(./)(?!styles.module)",
+        ".scss$",
+        "./styles.module.scss"
+    ],
+    "importOrderSeparation": true,
+    "importOrderSortSpecifiers": true
+}

@@ -1,0 +1,10 @@
+{
+    "extends": ["./node_modules/gts/", "plugin:react/recommended"],
+    "rules": {
+        "@typescript-eslint/no-explicit-any": ["off"]
+    },
+    "env": {
+        "browser": true,
+        "jest": true
+    }
+}

@@ -1,0 +1,48 @@
+@import "scss/variables.scss";
+
+.dropzone {
+    max-height: 30vh;
+    overflow: auto;
+
+    .text {
+        color: $textDimmed;
+    }
+
+    &[data-active="true"] {
+        .text {
+            color: $green;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .group {
+            svg {
+                color: $green;
+            }
+
+            &:not(:last-child) {
+                margin-bottom: $spacingUnit;
+            }
+
+            button {
+                transition: 150ms;
+                border-color: transparent;
+
+                &:hover {
+                    background-color: white;
+                    border-color: $red;
+                    color: $red;
+                }
+            }
+        }
+    }
+
+    .group {
+        min-height: 220;
+        pointer-events: "none";
+
+        svg {
+            color: $textDimmed;
+        }
+    }
+}

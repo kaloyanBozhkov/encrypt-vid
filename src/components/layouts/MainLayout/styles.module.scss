@@ -1,0 +1,40 @@
+@import "scss/breakpoints";
+@import "scss/variables";
+
+.mainLayout {
+    width: 100%;
+    height: 100%;
+
+    > nav {
+        position: fixed;
+        top: $marginUnit;
+        left: $marginUnit;
+        max-height: calc(100% - #{$marginUnit});
+        height: auto;
+        width: 20rem;
+        transition: all 500ms;
+        z-index: 20;
+
+        @include breakpoint(mobile, portrait) {
+            top: $spacingUnit;
+            bottom: $spacingUnit;
+            left: $spacingUnit;
+            right: $spacingUnit;
+            max-height: unset;
+            width: auto;
+        }
+
+        @include breakpoint(mobile, landscape) {
+            top: $baseUnit;
+            bottom: $baseUnit;
+            left: $baseUnit;
+            max-height: unset;
+            width: auto;
+        }
+    }
+    > main {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+}

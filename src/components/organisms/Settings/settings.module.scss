@@ -1,0 +1,138 @@
+@import "scss/variables.scss";
+@import "scss/breakpoints.scss";
+
+.settings {
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-size: 2rem;
+
+    &[data-is-visible="true"] {
+        > div:first-of-type {
+            transform: translateX(0);
+        }
+        > button {
+            transform: translate(0, 0);
+        }
+    }
+
+    &[data-is-visible="false"] {
+        > div:first-of-type {
+            transform: translateX(-150%);
+        }
+        > button {
+            transform: translate(-$marginUnit, -$marginUnit);
+
+            @include breakpoint(mobile, portrait) {
+                transform: translate(-$spacingUnit, -$spacingUnit);
+            }
+
+            @include breakpoint(mobile, landscape) {
+                transform: translate(-$baseUnit, -$baseUnit);
+            }
+        }
+    }
+    > button {
+        position: absolute;
+        top: 0.5rem;
+        left: 0.5rem;
+        color: white;
+        transition: transform 1s;
+        z-index: 1;
+    }
+
+    > div:first-of-type {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        transition: all 1s;
+        box-sizing: border-box;
+        padding: $spacingUnit;
+
+        > p {
+            text-align: center;
+        }
+
+        .switches {
+            > div:not(:last-of-type) {
+                margin-bottom: 1rem;
+            }
+        }
+
+        > div:first-of-type {
+            overflow: auto;
+            margin: 0 (-$spacingUnit);
+            padding: 0 $spacingUnit;
+            max-height: calc(100vh - #{4.2 * $marginUnit});
+
+            @include breakpoint(mobile, portrait) {
+                max-height: unset;
+            }
+
+            @include breakpoint(mobile, landscape) {
+                max-height: unset;
+            }
+        }
+
+        > div:last-of-type {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+        }
+    }
+
+    .submitBtn {
+        margin-top: $spacingUnit;
+        color: white;
+        font-size: 1.2rem;
+        border: dashed white 1px;
+        padding: $baseUnit 2 * $baseUnit;
+        height: auto;
+        width: auto;
+        transition: 0.2s;
+
+        &[disabled] {
+            opacity: 0.5;
+        }
+
+        svg {
+            margin-left: 0.8rem;
+            transform: scale(0.8);
+            transition: all 0.5s;
+        }
+
+        &:hover {
+            background: none;
+            text-decoration: underline;
+            background-color: white;
+            color: darken($textDimmed, 10%);
+
+            svg {
+                margin-left: 0.8rem;
+                transform: scale(1);
+            }
+        }
+    }
+}
+
+:global {
+    .mantine-InputWrapper-root {
+        label {
+            color: white !important;
+        }
+    }
+
+    .mantine-Switch-input {
+        transition: all 300ms;
+        &:checked {
+            background-color: $green;
+            border-color: lighten($green, 15%);
+        }
+    }
+}
