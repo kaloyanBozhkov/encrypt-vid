@@ -13,9 +13,10 @@ if (!container) throw Error('No root container?!')
 const root = ReactDOMClient.createRoot(container)
 
 root.render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
+    // initFrmae runs twice and vic.play runs twice.. address at some point
+    // <React.StrictMode>
+    <App />
+    // </React.StrictMode>
 )
 
 // If you want to start measuring performance in your app, pass a function

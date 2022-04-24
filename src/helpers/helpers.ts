@@ -3,42 +3,55 @@ import { MutableRefObject } from 'react'
 import type { WebPreviewConfig } from 'types/common'
 
 import { speechToText } from './speechToText'
+import { renderGroupPixelsAsSquares } from './unused'
 
-export const GlobalMessenger: {
-    ctx: CanvasRenderingContext2D | null
-    stopLiveRendering: null | (() => void)
-    statLiveRendering: null | (() => void)
-    charsObj: Record<'chars' | 'text', string>
-} = {
-    ctx: null,
-    stopLiveRendering: null,
-    statLiveRendering: null,
-    charsObj: {
-        chars: '4!?$P80OKBNMLHGFDASDQWETYU',
-        text: '4!?$P80OKBNMLHGFDASDQWETYU',
-    },
-}
-
-export const renderLetteredFrame = ({
-    groupBy,
-    image,
+/**
+ * Runs the active algorithm passes it formattedAvg pixel matrix
+ */
+export const runAlgorithm = ({
     ctx,
     imageData,
-    withBackgroundColor,
-    withoutBG = true,
-    centerShift_x = 0,
-    centerShift_y = 0,
-    greenMode = false,
+    image,
+    groupBy,
+    greenMode,
+    withTextInsteadOfChars = false,
 }: {
-    groupBy: number
-    image?: CanvasImageSource
     ctx: CanvasRenderingContext2D
-    withBackgroundColor: string
-    withoutBG?: boolean
-    centerShift_x?: number
-    centerShift_y?: number
-    greenMode?: boolean
     imageData?: ImageData
+    image?: CanvasImageSource
+    groupBy: number
+    greenMode: boolean
+    withTextInsteadOfChars?: boolean
+}) => {
+    const formattedAvg = getFormattedAvg({
+        ctx,
+        ...(image ? { image } : { imageData }),
+        groupBy,
+        greenMode,
+    })
+
+    GlobalMessenger.activeAlgorithm({
+        formattedAvg,
+        groupBy,
+        withTextInsteadOfChars,
+        centerShift_x: 0,
+        centerShift_y: 0,
+        ctx,
+    })
+}
+
+export const getFormattedAvg = ({
+    ctx,
+    imageData,
+    image,
+    groupBy,
+    greenMode,
+}: {
+    ctx: CanvasRenderingContext2D
+    imageData?: ImageData
+    image?: CanvasImageSource
+    groupBy: number
+    greenMode: boolean
 }) => {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
@@ -53,6 +66,29 @@ export const renderLetteredFrame = ({
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
+    return formattedAvg
+}
+
+export const renderLetteredFrame = ({
+    formattedAvg,
+    groupBy,
+    ctx,
+    withBackgroundColor,
+    withoutBG = true,
+    centerShift_x = 0,
+    centerShift_y = 0,
+    withTextInsteadOfChars = false,
+}: {
+    formattedAvg: ReturnType<typeof getFormattedAvg>
+    groupBy: number
+    ctx: CanvasRenderingContext2D
+    withBackgroundColor: string
+    withoutBG?: boolean
+    centerShift_x?: number
+    centerShift_y?: number
+    greenMode?: boolean
+    withTextInsteadOfChars?: boolean
+}) => {
     if (withBackgroundColor) {
         ctx.fillStyle = withBackgroundColor
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
@@ -66,6 +102,7 @@ export const renderLetteredFrame = ({
         )
 
     renderGroupPixelsAsLetters({
+        withTextInsteadOfChars,
         formattedAvg,
         groupBy,
         centerShift_x,
@@ -111,97 +148,89 @@ const imgPixelDataFormat = (pixelData: ImageData) => {
     return formatted
 }
 
-export type PixelInfo = { r: number; g: number; b: number; a: number }
+const avgPixels = (pixel: PixelInfo, groupBy: number) => ({
+    a: Math.ceil(pixel.a / groupBy),
+    r: Math.ceil(pixel.r / groupBy),
+    g: Math.ceil(pixel.g / groupBy),
+    b: Math.ceil(pixel.b / groupBy),
+})
+
+const sumPixels = (pixel1: PixelInfo, pixel2: PixelInfo, onlyG = false) => ({
+    r: onlyG ? 0 : pixel2.r + pixel1.r,
+    g: pixel2.g + pixel1.g,
+    b: onlyG ? 0 : pixel2.b + pixel1.b,
+    a: pixel2.a + pixel1.a,
+})
 
 export const getAveragePixelInfoPerGroupedBlockOfPixels = (
     pixelData: ImageData,
     // n of pixels to sum into 1 big pixel
     groupBy: number,
     onlyG = false
-): PixelInfo[][] => {
-    const formatted = imgPixelDataFormat(pixelData),
-        blocksPerRow = Math.ceil(pixelData.width / groupBy),
-        gathered: PixelInfo[][] = []
+) => {
+    const bufferSize = pixelData.width * groupBy,
+        totalPixelsGrouped = groupBy ** 2,
+        // blockSlicesPerRowCount = Math.ceil(pixelData.width / groupBy),
+        // matrix of avged group of block slices
+        groupedPixelsMatrix: PixelInfo[][] = []
 
-    let blockSlice = { r: 0, g: 0, b: 0, a: 0 }
+    // grouped block slices per row => matrix
+    let rowGroupedPixels: PixelInfo[][] = [],
+        // pixels currently being grouped per row
+        blockSlice = { r: 0, g: 0, b: 0, a: 0 }
 
-    for (let pixelIdx = 0; pixelIdx < formatted.length; pixelIdx++) {
-        const currPixel = formatted[pixelIdx]
+    for (let k = 0; k < pixelData.data.length; k += 4) {
+        // count pixel order
+        const pixelIdx = k / 4,
+            currPixel = {
+                r: pixelData.data[k],
+                g: pixelData.data[k + 1],
+                b: pixelData.data[k + 2],
+                a: pixelData.data[k + 3],
+            }
 
-        blockSlice.r += currPixel.r
-        blockSlice.g += currPixel.g
-        blockSlice.b += currPixel.b
-        blockSlice.a += currPixel.a
+        // add pixel to block slice currently being grouped
+        blockSlice = sumPixels(currPixel, blockSlice, onlyG)
 
-        // next row of pixels
-        if (pixelIdx % pixelData.width === 0) gathered.push([])
+        // group pixels by row (blockSlice)
+        if (pixelIdx % pixelData.width === 0) rowGroupedPixels.push([])
 
-        // block slice is rdy
-        if (pixelIdx % groupBy === 0) {
-            gathered[gathered.length - 1].push(blockSlice)
-            blockSlice = { r: 0, g: 0, b: 0, a: 0 }
-        } else if (pixelIdx === formatted.length - 1) {
-            gathered.push([])
-            gathered[gathered.length - 1].push(blockSlice)
+        // block slice is rdy to be added to grouped block slices per row
+        if ((pixelIdx + 1) % groupBy === 0) {
+            rowGroupedPixels[rowGroupedPixels.length - 1].push(blockSlice)
             blockSlice = { r: 0, g: 0, b: 0, a: 0 }
         }
-    }
 
-    const blocksMatrix: PixelInfo[][] = []
+        // each x rows we have all we need to process n = groupBy grouped blocks
+        if ((pixelIdx + 1) % bufferSize === 0) {
+            const avgPixelsPerBuffer = rowGroupedPixels.reduce((acc, rowBlockSlices, idx) => {
+                if (idx > 0) {
+                    const tmp = acc.map((groupedBlockSlices, idx) => {
+                        const currentBlockSlice = rowBlockSlices[idx]
+                        return sumPixels(groupedBlockSlices, currentBlockSlice, onlyG)
+                    })
 
-    for (let g = 0; g < gathered.length; g++) {
-        // already summed on X
-        const blockSlicesPerRow = gathered[g]
+                    // last one -> avg them
+                    if (idx === rowGroupedPixels.length - 1) {
+                        return tmp.map((groupedBlockSlice) =>
+                            avgPixels(groupedBlockSlice, totalPixelsGrouped)
+                        )
+                    }
 
-        // each groupBy new row of blocks
-        if (g % groupBy === 0)
-            blocksMatrix.push(
-                Array(blocksPerRow)
-                    .fill(undefined)
-                    .map(() => ({
-                        r: 0,
-                        g: 0,
-                        b: 0,
-                        a: 0,
-                    }))
-            )
-
-        const currRow = blocksMatrix[blocksMatrix.length - 1]
-
-        // could be undefined if groupBy is 0
-        currRow?.forEach((pixelInfo, idx) => {
-            // groupBy is not fitting fully within width/height so there's last row of pixelInfo which is not same length as other rows
-            if (!blockSlicesPerRow[idx]) return
-            pixelInfo.g += blockSlicesPerRow[idx].g
-            pixelInfo.a += blockSlicesPerRow[idx].a
-
-            if (!onlyG) {
-                pixelInfo.r += blockSlicesPerRow[idx].r
-                pixelInfo.b += blockSlicesPerRow[idx].b
-            }
-        })
-    }
-
-    const avgForPixels = groupBy ** 2,
-        avg = blocksMatrix.map((row) => {
-            return row.map((cell) => {
-                cell.g = Math.ceil(cell.g / avgForPixels)
-                cell.a = Math.ceil(cell.a / avgForPixels)
-
-                if (!onlyG) {
-                    cell.r = Math.ceil(cell.r / avgForPixels)
-                    cell.b = Math.ceil(cell.b / avgForPixels)
+                    return tmp
                 } else {
-                    cell.r = 0
-                    cell.b = 0
+                    return rowBlockSlices
                 }
+            }, [] as PixelInfo[])
 
-                return cell
-            })
-        })
-
-    return avg
+            groupedPixelsMatrix.push(avgPixelsPerBuffer)
+            rowGroupedPixels = []
+        }
+    }
+    return groupedPixelsMatrix
 }
+
+export type PixelInfo = { r: number; g: number; b: number; a: number }
 
 export const formattedBlockOfPixelsToImage = (
     formattedArr: PixelInfo[][],
@@ -392,27 +421,24 @@ export const initFrame = (
         .getUserMedia({ video: true, audio: false })
         .then((stream) => {
             vid.srcObject = stream
-            vid.play()
 
             const animateWebcamIntoCanvas = () => {
-                requestAnimationFrame((idx) => {
+                requestAnimationFrame(() => {
                     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
                     vidCtx.clearRect(0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
                     vidCtx.drawImage(vid, 0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
-                    const config = configRef.current,
-                        formattedAvg = getAveragePixelInfoPerGroupedBlockOfPixels(
-                            vidCtx.getImageData(0, 0, vidCtx.canvas.width, vidCtx.canvas.height),
-                            config.groupBy,
-                            config.withJustGreen
-                        )
+                    const config = configRef.current
 
-                    // animate letters
-                    renderGroupPixelsAsLetters({
-                        formattedAvg,
-                        groupBy: config.groupBy,
-                        centerShift_x: 0,
-                        centerShift_y: 0,
+                    runAlgorithm({
                         ctx,
+                        imageData: vidCtx.getImageData(
+                            0,
+                            0,
+                            vidCtx.canvas.width,
+                            vidCtx.canvas.height
+                        ),
+                        groupBy: config.groupBy,
+                        greenMode: config.withJustGreen,
                         withTextInsteadOfChars: config.withTextInsteadOfChars,
                     })
 
@@ -421,7 +447,10 @@ export const initFrame = (
                 })
             }
 
-            animateWebcamIntoCanvas()
+            vid.play()
+                .then(animateWebcamIntoCanvas)
+                // @TODO show play UI?
+                .catch((err) => console.error(err))
         })
         .catch((err) => {
             console.error('issue', err)
@@ -429,4 +458,26 @@ export const initFrame = (
 
     if (configRef.current.withTextInsteadOfChars && configRef.current.withSpeechUpdatedText)
         speechToText()
+}
+
+export const GlobalMessenger: {
+    ctx: CanvasRenderingContext2D | null
+    stopLiveRendering: null | (() => void)
+    startLiveRendering: null | (() => void)
+    charsObj: Record<'chars' | 'text', string>
+    algorithms: {
+        letters: typeof renderGroupPixelsAsLetters
+        tiles: typeof renderGroupPixelsAsSquares
+    }
+    activeAlgorithm: typeof renderGroupPixelsAsLetters | typeof renderGroupPixelsAsSquares
+} = {
+    ctx: null,
+    stopLiveRendering: null,
+    startLiveRendering: null,
+    charsObj: {
+        chars: '4!?$P80OKBNMLHGFDASDQWETYU',
+        text: '4!?$P80OKBNMLHGFDASDQWETYU',
+    },
+    algorithms: { letters: renderGroupPixelsAsLetters, tiles: renderGroupPixelsAsSquares },
+    activeAlgorithm: renderGroupPixelsAsLetters,
 }

@@ -83,7 +83,7 @@ export const animateBlurry = ({
         }, timeoutBy)
 }
 
-const renderGroupPixelsAsSquares = ({
+export const renderGroupPixelsAsSquares = ({
     formattedAvg,
     groupBy,
     centerShift_x,

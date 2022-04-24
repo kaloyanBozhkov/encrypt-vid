@@ -32,12 +32,12 @@ const WebcamCanvas = ({
             persistGateRef.current = false
         }
 
-        GlobalMessenger.statLiveRendering = () => {
+        GlobalMessenger.startLiveRendering = () => {
             persistGateRef.current = true
             initFrame(ctx, vidRef.current!, vidCtx, configObj, persistGateRef)
         }
 
-        GlobalMessenger.statLiveRendering()
+        GlobalMessenger.startLiveRendering()
     }, [])
 
     return (

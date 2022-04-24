@@ -3,7 +3,7 @@ import { Resolution, VidConfig } from 'types/common'
 
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
 
-import { GlobalMessenger, renderLetteredFrame } from './helpers'
+import { GlobalMessenger, getFormattedAvg, renderLetteredFrame, runAlgorithm } from './helpers'
 
 const worker = createFFmpeg({
     logger: (msg) => console.log(msg),
@@ -37,12 +37,14 @@ const renderLetterFrameForEachImageBuffer = ({
     files,
     groupBy,
     greenMode = false,
+    textMode = false,
 }: {
     files: ImgAsArrayBufferWithInfo[]
     width: number
     height: number
     groupBy: number
     greenMode?: boolean
+    textMode?: boolean
 }) =>
     new Promise<ImgAsArrayBufferWithInfo[]>((res, rej) => {
         const formattedFramesBuffer: ImgAsArrayBufferWithInfo[] = [],
@@ -58,12 +60,12 @@ const renderLetterFrameForEachImageBuffer = ({
                 const ui8ca = new Uint8ClampedArray(fileContents),
                     image = new ImageData(ui8ca, fileSize.width, fileSize.height)
 
-                renderLetteredFrame({
-                    groupBy,
+                runAlgorithm({
                     imageData: image,
-                    ctx: ctx as unknown as CanvasRenderingContext2D,
-                    withBackgroundColor: 'black',
+                    ctx,
+                    groupBy,
                     greenMode,
+                    withTextInsteadOfChars: textMode,
                 })
 
                 // save formatted frame
@@ -330,5 +332,5 @@ export const processFilesWithConfig = async (
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
         await processInput(config, fileInfo, fileName, setPreviewCanvasSize)
 
-    GlobalMessenger.statLiveRendering!()
+    GlobalMessenger.startLiveRendering!()
 }

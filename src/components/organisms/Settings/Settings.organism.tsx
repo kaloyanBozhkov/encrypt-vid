@@ -6,7 +6,7 @@ import Dropzone from 'components/organisms/Dropzone/Dropzone'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button, InputWrapper, NumberInput, Switch, Textarea } from '@mantine/core'
+import { Button, InputWrapper, NativeSelect, NumberInput, Switch, Textarea } from '@mantine/core'
 import { MIME_TYPES } from '@mantine/dropzone'
 import { useInputState } from '@mantine/hooks'
 
@@ -35,13 +35,27 @@ const Settings = ({
 }) => {
     const [width, setWidth] = useInputState(defaultSize.width),
         [height, setHeight] = useInputState(defaultSize.height),
-        [groupBy, setGroupBy] = useInputState(15),
+        [groupBy, setGroupBy] = useInputState(10),
         [matrixMode, setMatrixMode] = useState(false),
         [textMode, setTextMode] = useState(false),
         [speechMode, setSpeechMode] = useState(false),
         [isVisible, setVisible] = useState(true),
         [files, setFiles] = useState<File[]>([]),
-        [customChars, setCustomChars] = useState(GlobalMessenger.charsObj.text)
+        [customChars, setCustomChars] = useState(GlobalMessenger.charsObj.text),
+        [effect, setEffect] = useState<'letters' | 'tiles'>('letters')
+
+    useEffect(() => {
+        switch (effect) {
+            case 'tiles':
+                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['tiles']
+                break
+            case 'letters':
+                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['letters']
+                break
+            default:
+                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['letters']
+        }
+    }, [effect])
 
     // update the chars used for encrypting - ReqAnimFrame will read the charsObj.text
     useEffect(() => {
@@ -118,6 +132,17 @@ const Settings = ({
                             placeholder="Group Pixels By"
                             value={groupBy}
                             onChange={setGroupBy}
+                        />
+                    </InputWrapper>
+                    <InputWrapper label="Video Effect">
+                        <NativeSelect
+                            required
+                            data={['Letters', 'Tiles']}
+                            placeholder="Pick effect to use"
+                            value={effect[0].toUpperCase() + effect.substring(1)}
+                            onChange={({ currentTarget: { value } }) =>
+                                setEffect(value.toLowerCase() as 'tiles' | 'letters')
+                            }
                         />
                     </InputWrapper>
                     <InputWrapper label="Modes" className={styles.switches}>

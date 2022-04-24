@@ -10,7 +10,7 @@ function App() {
     const configObj = useRef<WebPreviewConfig>({
         withTextInsteadOfChars: false,
         withJustGreen: false,
-        groupBy: 15,
+        groupBy: 10,
     })
 
     return <MainPage configObj={configObj} />
