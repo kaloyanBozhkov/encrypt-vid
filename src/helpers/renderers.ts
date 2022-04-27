@@ -1,0 +1,130 @@
+import { GlobalMessenger } from './globalMessenger'
+import { PixelInfo, calculateLuminance, formattedBlockOfPixelsToImage } from './helpers'
+
+export const renderGroupPixelsAsLetters = ({
+    formattedAvg,
+    groupBy,
+    centerShift_x,
+    centerShift_y,
+    ctx,
+    withTextInsteadOfChars = false,
+}: {
+    formattedAvg: PixelInfo[][]
+    groupBy: number
+    centerShift_x: number
+    centerShift_y: number
+    ctx: CanvasRenderingContext2D
+    withTextInsteadOfChars?: boolean
+}) => {
+    const darkCharsetStatic = '.,_-~:',
+        chars = `${darkCharsetStatic}${GlobalMessenger.charsObj.chars}`,
+        getKey = (luminance: number, chars: string) =>
+            ((luminance >= 255 ? 255 : luminance) * chars.length) / 255
+
+    ctx.font = `${groupBy}px Matrix`
+    ctx.textBaseline = 'middle'
+    ctx.textAlign = 'center'
+
+    if (!withTextInsteadOfChars) {
+        const curry = (cell: PixelInfo) =>
+                chars[Math.floor(getKey(calculateLuminance(cell), chars))] ||
+                chars[chars.length - 1],
+            letterImageInfo = formattedAvg.map((row) => row.map(curry))
+
+        letterImageInfo.forEach((row, rowIdx) => {
+            row.forEach((cell, cellIdx) => {
+                const { r, g, b, a } = formattedAvg[rowIdx][cellIdx],
+                    aToScale0To1 = (a * 100) / 255 / 100
+                ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
+
+                ctx.fillText(
+                    cell,
+                    centerShift_x + cellIdx * groupBy + groupBy / 2,
+                    centerShift_y + rowIdx * groupBy + groupBy / 2,
+                    groupBy
+                )
+            })
+        })
+    } else {
+        let charCounter = 0
+
+        formattedAvg.forEach((row, rowIdx) => {
+            row.forEach(({ r, g, b, a }, cellIdx) => {
+                const aToScale0To1 = (a * 100) / 255 / 100,
+                    key = Math.round(
+                        getKey(calculateLuminance({ r, g, b } as PixelInfo), 'asd123asdsadas')
+                    )
+
+                ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
+
+                ctx.fillText(
+                    key < darkCharsetStatic.length
+                        ? darkCharsetStatic[key]
+                        : GlobalMessenger.charsObj.text[charCounter],
+                    centerShift_x + cellIdx * groupBy + groupBy / 2,
+                    centerShift_y + rowIdx * groupBy + groupBy / 2,
+                    groupBy
+                )
+
+                if (key >= darkCharsetStatic.length)
+                    charCounter =
+                        charCounter + 1 === GlobalMessenger.charsObj.text.length
+                            ? 0
+                            : charCounter + 1
+            })
+        })
+    }
+}
+
+export const renderGroupPixelsAsSquares = ({
+    formattedAvg,
+    groupBy,
+    centerShift_x,
+    centerShift_y,
+    ctx,
+}: {
+    formattedAvg: PixelInfo[][]
+    groupBy: number
+    centerShift_x: number
+    centerShift_y: number
+    ctx: CanvasRenderingContext2D
+}) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+
+    formattedAvg.forEach((row, rowIdx) =>
+        row.forEach((cell, cellIdx) => {
+            const pixelInfo = formattedAvg[rowIdx][cellIdx],
+                size = (calculateLuminance(pixelInfo) * groupBy) / 100
+
+            ctx.fillStyle = `rgba(${pixelInfo.r},${pixelInfo.g},${pixelInfo.b},${pixelInfo.a})`
+            ctx.fillRect(
+                centerShift_x + cellIdx * groupBy + groupBy / 2 + (groupBy - size) / 2,
+                centerShift_y + rowIdx * groupBy + groupBy / 2 + (groupBy - size) / 2,
+                size,
+                size
+            )
+        })
+    )
+}
+
+export const renderBlurryPixels = ({
+    formattedAvg,
+    groupBy,
+    centerShift_x,
+    centerShift_y,
+    ctx,
+}: {
+    formattedAvg: PixelInfo[][]
+    groupBy: number
+    centerShift_x: number
+    centerShift_y: number
+    ctx: CanvasRenderingContext2D
+}) => {
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+
+    ctx.putImageData(
+        formattedBlockOfPixelsToImage(formattedAvg, groupBy, ctx),
+        centerShift_x,
+        centerShift_y
+    )
+}

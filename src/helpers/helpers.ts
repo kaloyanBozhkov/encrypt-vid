@@ -1,9 +1,11 @@
-import { MutableRefObject } from 'react'
+import { getFormattedAvg } from './canvas'
+import { GlobalMessenger } from './globalMessenger'
+import { renderGroupPixelsAsLetters } from './renderers'
 
-import type { WebPreviewConfig } from 'types/common'
-
-import { speechToText } from './speechToText'
-import { renderGroupPixelsAsSquares } from './unused'
+export const calculateLuminance = ({ r, g, b }: PixelInfo) =>
+    GlobalMessenger.luminanceWeights.r * r +
+    GlobalMessenger.luminanceWeights.g * g +
+    GlobalMessenger.luminanceWeights.b * b
 
 /**
  * Runs the active algorithm passes it formattedAvg pixel matrix
@@ -38,114 +40,6 @@ export const runAlgorithm = ({
         centerShift_y: 0,
         ctx,
     })
-}
-
-export const getFormattedAvg = ({
-    ctx,
-    imageData,
-    image,
-    groupBy,
-    greenMode,
-}: {
-    ctx: CanvasRenderingContext2D
-    imageData?: ImageData
-    image?: CanvasImageSource
-    groupBy: number
-    greenMode: boolean
-}) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
-    if (imageData) ctx.putImageData(imageData, 0, 0)
-    else if (image) ctx.drawImage(image, 0, 0, ctx.canvas.width, ctx.canvas.height)
-
-    const formattedAvg = getAveragePixelInfoPerGroupedBlockOfPixels(
-        ctx.getImageData(0, 0, ctx.canvas.width, ctx.canvas.height),
-        groupBy,
-        greenMode
-    )
-
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
-    return formattedAvg
-}
-
-export const renderLetteredFrame = ({
-    formattedAvg,
-    groupBy,
-    ctx,
-    withBackgroundColor,
-    withoutBG = true,
-    centerShift_x = 0,
-    centerShift_y = 0,
-    withTextInsteadOfChars = false,
-}: {
-    formattedAvg: ReturnType<typeof getFormattedAvg>
-    groupBy: number
-    ctx: CanvasRenderingContext2D
-    withBackgroundColor: string
-    withoutBG?: boolean
-    centerShift_x?: number
-    centerShift_y?: number
-    greenMode?: boolean
-    withTextInsteadOfChars?: boolean
-}) => {
-    if (withBackgroundColor) {
-        ctx.fillStyle = withBackgroundColor
-        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    }
-
-    if (!withoutBG)
-        ctx.putImageData(
-            formattedBlockOfPixelsToImage(formattedAvg, groupBy, ctx),
-            centerShift_x,
-            centerShift_y
-        )
-
-    renderGroupPixelsAsLetters({
-        withTextInsteadOfChars,
-        formattedAvg,
-        groupBy,
-        centerShift_x,
-        centerShift_y,
-        ctx,
-    })
-}
-
-export const drawImageScaled = (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
-    const canvas = ctx.canvas,
-        hRatio = canvas.width / img.width,
-        vRatio = canvas.height / img.height,
-        ratio = Math.min(hRatio, vRatio),
-        centerShift_x = (canvas.width - img.width * ratio) / 2,
-        centerShift_y = (canvas.height - img.height * ratio) / 2
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(
-        img,
-        0,
-        0,
-        img.width,
-        img.height,
-        centerShift_x,
-        centerShift_y,
-        img.width * ratio,
-        img.height * ratio
-    )
-}
-
-const imgPixelDataFormat = (pixelData: ImageData) => {
-    const formatted: { r: number; b: number; g: number; a: number }[] = []
-
-    for (let k = 0; k < pixelData.data.length; k += 4) {
-        formatted.push({
-            r: pixelData.data[k],
-            g: pixelData.data[k + 1],
-            b: pixelData.data[k + 2],
-            a: pixelData.data[k + 3],
-        })
-    }
-
-    return formatted
 }
 
 const avgPixels = (pixel: PixelInfo, groupBy: number) => ({
@@ -292,80 +186,6 @@ export const getPixelData = (img: HTMLImageElement, ctx: CanvasRenderingContext2
     }
 }
 
-export const renderGroupPixelsAsLetters = ({
-    formattedAvg,
-    groupBy,
-    centerShift_x,
-    centerShift_y,
-    ctx,
-    withTextInsteadOfChars = false,
-}: {
-    formattedAvg: PixelInfo[][]
-    groupBy: number
-    centerShift_x: number
-    centerShift_y: number
-    ctx: CanvasRenderingContext2D
-    withTextInsteadOfChars?: boolean
-}) => {
-    const darkCharsetStatic = '.,_-~:',
-        calculateLuminance = ({ r, g, b }: PixelInfo) => 0.2126 * r + 0.7152 * g + 0.0722 * b,
-        chars = `${darkCharsetStatic}${GlobalMessenger.charsObj.chars}`,
-        getKey = (luminance: number, chars: string) => (luminance * chars.length) / 255
-
-    ctx.font = `${groupBy}px Matrix`
-    ctx.textBaseline = 'middle'
-    ctx.textAlign = 'center'
-
-    if (!withTextInsteadOfChars) {
-        const curry = (cell: PixelInfo) =>
-                chars[Math.floor(getKey(calculateLuminance(cell), chars))],
-            letterImageInfo = formattedAvg.map((row) => row.map(curry))
-
-        letterImageInfo.forEach((row, rowIdx) => {
-            row.forEach((cell, cellIdx) => {
-                const { r, g, b, a } = formattedAvg[rowIdx][cellIdx],
-                    aToScale0To1 = (a * 100) / 255 / 100
-                ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
-
-                ctx.fillText(
-                    cell,
-                    centerShift_x + cellIdx * groupBy + groupBy / 2,
-                    centerShift_y + rowIdx * groupBy + groupBy / 2,
-                    groupBy
-                )
-            })
-        })
-    } else {
-        let charCounter = 0
-
-        formattedAvg.forEach((row, rowIdx) => {
-            row.forEach(({ r, g, b, a }, cellIdx) => {
-                const aToScale0To1 = (a * 100) / 255 / 100,
-                    key = Math.round(
-                        getKey(calculateLuminance({ r, g, b } as PixelInfo), 'asd123asdsadas')
-                    )
-
-                ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
-
-                ctx.fillText(
-                    key < darkCharsetStatic.length
-                        ? darkCharsetStatic[key]
-                        : GlobalMessenger.charsObj.text[charCounter],
-                    centerShift_x + cellIdx * groupBy + groupBy / 2,
-                    centerShift_y + rowIdx * groupBy + groupBy / 2,
-                    groupBy
-                )
-
-                if (key >= darkCharsetStatic.length)
-                    charCounter =
-                        charCounter + 1 === GlobalMessenger.charsObj.text.length
-                            ? 0
-                            : charCounter + 1
-            })
-        })
-    }
-}
-
 export const animateLetters = ({
     formattedAvg,
     groupBy,
@@ -404,80 +224,4 @@ export const animateLetters = ({
                 ctx,
             })
         }, 25)
-}
-
-export const initFrame = (
-    ctx: CanvasRenderingContext2D,
-    vid: HTMLVideoElement,
-    vidCtx: CanvasRenderingContext2D,
-    configRef: MutableRefObject<WebPreviewConfig>,
-    // used to stop webcam rendering
-    persistGateRef: MutableRefObject<boolean>
-) => {
-    // load webcam with letters
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
-    navigator.mediaDevices
-        .getUserMedia({ video: true, audio: false })
-        .then((stream) => {
-            vid.srcObject = stream
-
-            const animateWebcamIntoCanvas = () => {
-                requestAnimationFrame(() => {
-                    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-                    vidCtx.clearRect(0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
-                    vidCtx.drawImage(vid, 0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
-                    const config = configRef.current
-
-                    runAlgorithm({
-                        ctx,
-                        imageData: vidCtx.getImageData(
-                            0,
-                            0,
-                            vidCtx.canvas.width,
-                            vidCtx.canvas.height
-                        ),
-                        groupBy: config.groupBy,
-                        greenMode: config.withJustGreen,
-                        withTextInsteadOfChars: config.withTextInsteadOfChars,
-                    })
-
-                    if (persistGateRef.current) animateWebcamIntoCanvas()
-                    else ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-                })
-            }
-
-            vid.play()
-                .then(animateWebcamIntoCanvas)
-                // @TODO show play UI?
-                .catch((err) => console.error(err))
-        })
-        .catch((err) => {
-            console.error('issue', err)
-        })
-
-    if (configRef.current.withTextInsteadOfChars && configRef.current.withSpeechUpdatedText)
-        speechToText()
-}
-
-export const GlobalMessenger: {
-    ctx: CanvasRenderingContext2D | null
-    stopLiveRendering: null | (() => void)
-    startLiveRendering: null | (() => void)
-    charsObj: Record<'chars' | 'text', string>
-    algorithms: {
-        letters: typeof renderGroupPixelsAsLetters
-        tiles: typeof renderGroupPixelsAsSquares
-    }
-    activeAlgorithm: typeof renderGroupPixelsAsLetters | typeof renderGroupPixelsAsSquares
-} = {
-    ctx: null,
-    stopLiveRendering: null,
-    startLiveRendering: null,
-    charsObj: {
-        chars: '4!?$P80OKBNMLHGFDASDQWETYU',
-        text: '4!?$P80OKBNMLHGFDASDQWETYU',
-    },
-    algorithms: { letters: renderGroupPixelsAsLetters, tiles: renderGroupPixelsAsSquares },
-    activeAlgorithm: renderGroupPixelsAsLetters,
 }

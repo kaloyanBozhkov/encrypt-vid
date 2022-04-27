@@ -9,15 +9,13 @@ import MainLayout from 'components/layouts/MainLayout/Main.layout'
 
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
 
-const defaultSize = {
-    width: 1280,
-    height: 720,
-}
-
 let timer: null | ReturnType<typeof setTimeout> = null
 
 const MainPage = ({ configObj }: { configObj: MutableRefObject<WebPreviewConfig> }) => {
-    const [size, setSize] = useState<Resolution>(defaultSize),
+    const [size, setSize] = useState<Resolution>({
+            width: configObj.current.width,
+            height: configObj.current.height,
+        }),
         updater = useCallback(
             (
                 key: keyof WebPreviewConfig,
@@ -57,7 +55,14 @@ const MainPage = ({ configObj }: { configObj: MutableRefObject<WebPreviewConfig>
                     onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
                     onConfigReady={(config) => {
                         processFilesWithConfig(config, (size: Resolution | 'default') =>
-                            setSize(size === 'default' ? defaultSize : size)
+                            setSize(
+                                size === 'default'
+                                    ? {
+                                          width: configObj.current.width,
+                                          height: configObj.current.height,
+                                      }
+                                    : size
+                            )
                         )
                     }}
                 />

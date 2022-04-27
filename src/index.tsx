@@ -13,7 +13,6 @@ if (!container) throw Error('No root container?!')
 const root = ReactDOMClient.createRoot(container)
 
 root.render(
-    // initFrmae runs twice and vic.play runs twice.. address at some point
     // <React.StrictMode>
     <App />
     // </React.StrictMode>

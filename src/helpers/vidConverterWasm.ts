@@ -3,7 +3,8 @@ import { Resolution, VidConfig } from 'types/common'
 
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
 
-import { GlobalMessenger, getFormattedAvg, renderLetteredFrame, runAlgorithm } from './helpers'
+import { GlobalMessenger } from './globalMessenger'
+import { runAlgorithm } from './helpers'
 
 const worker = createFFmpeg({
     logger: (msg) => console.log(msg),
@@ -15,7 +16,7 @@ const readFile = (file: File) =>
     new Promise<Uint8Array>((res, rej) => {
         const fileReader = new FileReader()
 
-        fileReader.onload = (e) => {
+        fileReader.onload = () => {
             const arrayBuffer = new Uint8Array(fileReader.result as ArrayBuffer)
             res(arrayBuffer)
         }

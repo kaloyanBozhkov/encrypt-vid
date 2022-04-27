@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { VidConfig } from 'types/common'
 
@@ -6,13 +6,31 @@ import Dropzone from 'components/organisms/Dropzone/Dropzone'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Button, InputWrapper, NativeSelect, NumberInput, Switch, Textarea } from '@mantine/core'
+import {
+    Button,
+    InputWrapper,
+    NativeSelect,
+    NumberInput,
+    Slider,
+    Switch,
+    Textarea,
+} from '@mantine/core'
 import { MIME_TYPES } from '@mantine/dropzone'
 import { useInputState } from '@mantine/hooks'
 
-import { GlobalMessenger } from 'helpers/helpers'
+import { GlobalMessenger } from 'helpers/globalMessenger'
 
 import styles from './settings.module.scss'
+
+const defaultSliderProps = {
+    marks: [
+        { value: 0, label: '0' },
+        { value: 50, label: '0.5' },
+        { value: 100, label: '1' },
+    ],
+    step: 0.001,
+    precision: 5,
+}
 
 const Settings = ({
     onTextModeChanged,
@@ -35,26 +53,49 @@ const Settings = ({
 }) => {
     const [width, setWidth] = useInputState(defaultSize.width),
         [height, setHeight] = useInputState(defaultSize.height),
-        [groupBy, setGroupBy] = useInputState(10),
+        [groupBy, setGroupBy] = useInputState(15),
         [matrixMode, setMatrixMode] = useState(false),
         [textMode, setTextMode] = useState(false),
         [speechMode, setSpeechMode] = useState(false),
         [isVisible, setVisible] = useState(true),
+        [withCustomLuminance, settWithCustomLuminance] = useState(false),
+        [customLuminance, setCustomLuminance] = useState({
+            r: 0,
+            g: 0,
+            b: 0,
+        }),
         [files, setFiles] = useState<File[]>([]),
         [customChars, setCustomChars] = useState(GlobalMessenger.charsObj.text),
-        [effect, setEffect] = useState<'letters' | 'tiles'>('letters')
+        [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
+        effectNames = useMemo(
+            () =>
+                Object.keys(GlobalMessenger.algorithms).map(
+                    (key) => key[0].toUpperCase() + key.substring(1)
+                ),
+            []
+        )
 
     useEffect(() => {
-        switch (effect) {
-            case 'tiles':
-                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['tiles']
-                break
-            case 'letters':
-                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['letters']
-                break
-            default:
-                GlobalMessenger.activeAlgorithm = GlobalMessenger.algorithms['letters']
-        }
+        if (!withCustomLuminance) GlobalMessenger.setCustomLuminance('default')
+
+        setCustomLuminance({
+            r: GlobalMessenger.luminanceWeights.r * 100,
+            g: GlobalMessenger.luminanceWeights.g * 100,
+            b: GlobalMessenger.luminanceWeights.b * 100,
+        })
+    }, [withCustomLuminance])
+
+    useEffect(() => {
+        if (withCustomLuminance)
+            GlobalMessenger.setCustomLuminance({
+                r: Number((customLuminance.r / 100).toPrecision(3)),
+                g: Number((customLuminance.g / 100).toPrecision(3)),
+                b: Number((customLuminance.b / 100).toPrecision(3)),
+            })
+    }, [customLuminance])
+
+    useEffect(() => {
+        GlobalMessenger.setActiveAlgorithm(effect)
     }, [effect])
 
     // update the chars used for encrypting - ReqAnimFrame will read the charsObj.text
@@ -137,7 +178,7 @@ const Settings = ({
                     <InputWrapper label="Video Effect">
                         <NativeSelect
                             required
-                            data={['Letters', 'Tiles']}
+                            data={effectNames}
                             placeholder="Pick effect to use"
                             value={effect[0].toUpperCase() + effect.substring(1)}
                             onChange={({ currentTarget: { value } }) =>
@@ -178,7 +219,58 @@ const Settings = ({
                                 }
                             />
                         )}
+                        <Switch
+                            label="custom luminance"
+                            size="md"
+                            checked={withCustomLuminance}
+                            onChange={({ currentTarget: { checked } }) =>
+                                settWithCustomLuminance(checked)
+                            }
+                        />
                     </InputWrapper>
+                    {withCustomLuminance && (
+                        <InputWrapper label="Luminance Weights">
+                            <InputWrapper label={`red: ${customLuminance.r}`}>
+                                <Slider
+                                    {...defaultSliderProps}
+                                    label="red"
+                                    value={customLuminance.r}
+                                    onChange={(r) =>
+                                        setCustomLuminance((prev) => ({
+                                            ...prev,
+                                            r,
+                                        }))
+                                    }
+                                />
+                            </InputWrapper>
+                            <InputWrapper label={`green: ${customLuminance.g}`}>
+                                <Slider
+                                    label="green"
+                                    {...defaultSliderProps}
+                                    value={customLuminance.g}
+                                    onChange={(g) =>
+                                        setCustomLuminance((prev) => ({
+                                            ...prev,
+                                            g,
+                                        }))
+                                    }
+                                />
+                            </InputWrapper>
+                            <InputWrapper label={`blue: ${customLuminance.b}`}>
+                                <Slider
+                                    label="blue"
+                                    {...defaultSliderProps}
+                                    value={customLuminance.b}
+                                    onChange={(b) =>
+                                        setCustomLuminance((prev) => ({
+                                            ...prev,
+                                            b,
+                                        }))
+                                    }
+                                />
+                            </InputWrapper>
+                        </InputWrapper>
+                    )}
                     <InputWrapper label="Files">
                         <Dropzone
                             onDrop={setFiles}

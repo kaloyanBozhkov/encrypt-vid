@@ -1,6 +1,8 @@
 export type WebPreviewConfig = {
     groupBy: number
     withJustGreen: boolean
+    width: number
+    height: number
 } & (
     | {
           withTextInsteadOfChars: false

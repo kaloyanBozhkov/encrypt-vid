@@ -2,7 +2,8 @@ import React, { MutableRefObject, useEffect, useRef } from 'react'
 
 import type { WebPreviewConfig } from 'types/common'
 
-import { GlobalMessenger, initFrame } from 'helpers/helpers'
+import { GlobalMessenger } from 'helpers/globalMessenger'
+import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
@@ -34,7 +35,7 @@ const WebcamCanvas = ({
 
         GlobalMessenger.startLiveRendering = () => {
             persistGateRef.current = true
-            initFrame(ctx, vidRef.current!, vidCtx, configObj, persistGateRef)
+            playPreview(ctx, vidRef.current!, vidCtx, configObj, persistGateRef)
         }
 
         GlobalMessenger.startLiveRendering()
