@@ -3,9 +3,9 @@ import { GlobalMessenger } from './globalMessenger'
 import { renderGroupPixelsAsLetters } from './renderers'
 
 export const calculateLuminance = ({ r, g, b }: PixelInfo) =>
-    GlobalMessenger.luminanceWeights.r * r +
-    GlobalMessenger.luminanceWeights.g * g +
-    GlobalMessenger.luminanceWeights.b * b
+    GlobalMessenger.renderSettings.luminanceWeights.r * r +
+    GlobalMessenger.renderSettings.luminanceWeights.g * g +
+    GlobalMessenger.renderSettings.luminanceWeights.b * b
 
 /**
  * Runs the active algorithm passes it formattedAvg pixel matrix
@@ -32,7 +32,7 @@ export const runAlgorithm = ({
         greenMode,
     })
 
-    GlobalMessenger.activeAlgorithm({
+    GlobalMessenger.renderSettings.activeAlgorithm({
         formattedAvg,
         groupBy,
         withTextInsteadOfChars,

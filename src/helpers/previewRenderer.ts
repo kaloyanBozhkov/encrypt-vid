@@ -1,7 +1,6 @@
 import { MutableRefObject } from 'react'
 
-import { WebPreviewConfig } from 'types/common'
-
+import { GlobalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 import { speechToText } from './speechToText'
 
@@ -9,7 +8,6 @@ export const playPreview = (
     ctx: CanvasRenderingContext2D,
     vid: HTMLVideoElement,
     vidCtx: CanvasRenderingContext2D,
-    configRef: MutableRefObject<WebPreviewConfig>,
     // used to stop webcam rendering
     persistGateRef: MutableRefObject<boolean>
 ) => {
@@ -17,7 +15,7 @@ export const playPreview = (
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
     navigator.mediaDevices
-        .getUserMedia({ video: true, audio: false })
+        .getUserMedia({ video: { width: 9999 }, audio: false })
         .then((stream) => {
             vid.srcObject = stream
 
@@ -26,7 +24,6 @@ export const playPreview = (
                     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
                     vidCtx.clearRect(0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
                     vidCtx.drawImage(vid, 0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
-                    const config = configRef.current
 
                     runAlgorithm({
                         ctx,
@@ -36,9 +33,10 @@ export const playPreview = (
                             vidCtx.canvas.width,
                             vidCtx.canvas.height
                         ),
-                        groupBy: config.groupBy,
-                        greenMode: config.withJustGreen,
-                        withTextInsteadOfChars: config.withTextInsteadOfChars,
+                        groupBy: GlobalMessenger.renderSettings.groupBy,
+                        greenMode: GlobalMessenger.renderSettings.withJustGreen,
+                        withTextInsteadOfChars:
+                            GlobalMessenger.renderSettings.withTextInsteadOfChars,
                     })
 
                     if (persistGateRef.current) {
@@ -48,7 +46,14 @@ export const playPreview = (
             }
 
             vid.play()
-                .then(animateWebcamIntoCanvas)
+                .then(() => {
+                    GlobalMessenger.preview.setPreviewSize?.({
+                        width: vid.videoWidth,
+                        height: vid.videoHeight,
+                    })
+
+                    animateWebcamIntoCanvas()
+                })
                 .catch((err) => {
                     // @TODO show play UI?
                     alert(
@@ -61,6 +66,9 @@ export const playPreview = (
             console.error('issue', err)
         })
 
-    if (configRef.current.withTextInsteadOfChars && configRef.current.withSpeechUpdatedText)
+    if (
+        GlobalMessenger.renderSettings.withTextInsteadOfChars &&
+        GlobalMessenger.renderSettings.withSpeechUpdatedText
+    )
         speechToText()
 }

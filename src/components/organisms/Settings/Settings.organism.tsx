@@ -33,10 +33,6 @@ const defaultSliderProps = {
 }
 
 const Settings = ({
-    onTextModeChanged,
-    onSpeechModeChanged,
-    onMatrixModeChanged,
-    onGroupByChanged,
     onHeightChanged,
     onWidthChanged,
     onConfigReady,
@@ -44,10 +40,6 @@ const Settings = ({
 }: {
     onWidthChanged: (n: number) => void
     onHeightChanged: (n: number) => void
-    onGroupByChanged: (n: number) => void
-    onMatrixModeChanged: (b: boolean) => void
-    onTextModeChanged: (b: boolean) => void
-    onSpeechModeChanged: (b: boolean) => void
     onConfigReady: (config: VidConfig) => void
     defaultSize: { width: number; height: number }
 }) => {
@@ -65,29 +57,29 @@ const Settings = ({
             b: 0,
         }),
         [files, setFiles] = useState<File[]>([]),
-        [customChars, setCustomChars] = useState(GlobalMessenger.charsObj.text),
+        [customChars, setCustomChars] = useState(GlobalMessenger.renderSettings.charsObj.text),
         [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
         effectNames = useMemo(
             () =>
-                Object.keys(GlobalMessenger.algorithms).map(
+                Object.keys(GlobalMessenger.renderSettings.algorithms).map(
                     (key) => key[0].toUpperCase() + key.substring(1)
                 ),
             []
         )
 
     useEffect(() => {
-        if (!withCustomLuminance) GlobalMessenger.setCustomLuminance('default')
+        if (!withCustomLuminance) GlobalMessenger.renderSettings.setCustomLuminance('default')
 
         setCustomLuminance({
-            r: GlobalMessenger.luminanceWeights.r * 100,
-            g: GlobalMessenger.luminanceWeights.g * 100,
-            b: GlobalMessenger.luminanceWeights.b * 100,
+            r: GlobalMessenger.renderSettings.luminanceWeights.r * 100,
+            g: GlobalMessenger.renderSettings.luminanceWeights.g * 100,
+            b: GlobalMessenger.renderSettings.luminanceWeights.b * 100,
         })
     }, [withCustomLuminance])
 
     useEffect(() => {
         if (withCustomLuminance)
-            GlobalMessenger.setCustomLuminance({
+            GlobalMessenger.renderSettings.setCustomLuminance({
                 r: Number((customLuminance.r / 100).toPrecision(3)),
                 g: Number((customLuminance.g / 100).toPrecision(3)),
                 b: Number((customLuminance.b / 100).toPrecision(3)),
@@ -95,12 +87,12 @@ const Settings = ({
     }, [customLuminance])
 
     useEffect(() => {
-        GlobalMessenger.setActiveAlgorithm(effect)
+        GlobalMessenger.renderSettings.setActiveAlgorithm(effect)
     }, [effect])
 
     // update the chars used for encrypting - ReqAnimFrame will read the charsObj.text
     useEffect(() => {
-        GlobalMessenger.charsObj.text = customChars
+        GlobalMessenger.renderSettings.charsObj.text = customChars
     }, [customChars])
 
     // when preview is updated the resolution will change, show the change in settings as well
@@ -118,19 +110,19 @@ const Settings = ({
     }, [height])
 
     useEffect(() => {
-        onGroupByChanged(groupBy)
+        GlobalMessenger.renderSettings.groupBy = groupBy
     }, [groupBy])
 
     useEffect(() => {
-        onMatrixModeChanged(matrixMode)
+        GlobalMessenger.renderSettings.withJustGreen = matrixMode
     }, [matrixMode])
 
     useEffect(() => {
-        onTextModeChanged(textMode)
+        GlobalMessenger.renderSettings.withTextInsteadOfChars = textMode
     }, [textMode])
 
     useEffect(() => {
-        onSpeechModeChanged(speechMode)
+        GlobalMessenger.renderSettings.withSpeechUpdatedText = speechMode
     }, [speechMode])
 
     return (
@@ -193,23 +185,27 @@ const Settings = ({
                             checked={matrixMode}
                             onChange={({ currentTarget: { checked } }) => setMatrixMode(checked)}
                         />
-                        <Switch
-                            label="custom static text/chars"
-                            size="md"
-                            checked={textMode}
-                            onChange={({ currentTarget: { checked } }) => setTextMode(checked)}
-                        />
-                        {textMode && (
+                        {effect === 'letters' && (
+                            <Switch
+                                label="custom static text/chars"
+                                size="md"
+                                checked={textMode}
+                                onChange={({ currentTarget: { checked } }) => setTextMode(checked)}
+                            />
+                        )}
+                        {textMode && effect === 'letters' && (
                             <Textarea
                                 placeholder="Type what text to use instead of default encoding charset"
                                 label="Static text/chars"
                                 autosize
                                 minRows={2}
                                 value={customChars}
-                                onChange={({ currentTarget: { value } }) => setCustomChars(value)}
+                                onChange={({ currentTarget: { value } }) =>
+                                    setCustomChars(value.toUpperCase())
+                                }
                             />
                         )}
-                        {textMode && (
+                        {textMode && effect === 'letters' && (
                             <Switch
                                 label="voice updates text"
                                 size="md"

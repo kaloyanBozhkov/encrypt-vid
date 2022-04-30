@@ -3,6 +3,7 @@ import { Resolution, VidConfig } from 'types/common'
 
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
 
+import { drawImageFittingWithinParentBounds } from './canvas'
 import { GlobalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 
@@ -49,6 +50,7 @@ const renderLetterFrameForEachImageBuffer = ({
 }) =>
     new Promise<ImgAsArrayBufferWithInfo[]>((res, rej) => {
         const formattedFramesBuffer: ImgAsArrayBufferWithInfo[] = [],
+            // hidden canvas to format frames on
             canvas = document.createElement('canvas'),
             ctx = canvas.getContext('2d')
 
@@ -81,25 +83,15 @@ const renderLetterFrameForEachImageBuffer = ({
                     fileContents: imageDataAsUInt8Array,
                 })
 
-                // draw progress to preview canvas
-                const formattedImageData = new ImageData(
-                    new Uint8ClampedArray(imageData.data as ArrayBuffer),
-                    fileSize.width,
-                    fileSize.height
-                )
-
-                // show preview, with centered formatted image
-                GlobalMessenger.ctx!.canvas.height =
-                    window.innerHeight > fileSize.height ? window.innerHeight : fileSize.height
-
-                GlobalMessenger.ctx!.canvas.width =
-                    window.innerWidth > fileSize.width ? window.innerWidth : fileSize.width
-
-                GlobalMessenger.ctx!.putImageData(
-                    formattedImageData,
-                    GlobalMessenger.ctx!.canvas.width / 2 - formattedImageData.width / 2,
-                    GlobalMessenger.ctx!.canvas.height / 2 - formattedImageData.height / 2
-                )
+                drawImageFittingWithinParentBounds({
+                    fileSize,
+                    imageData: ctx.canvas,
+                    parentSize: {
+                        width: window.innerWidth,
+                        height: window.innerHeight,
+                    },
+                    ctx: GlobalMessenger.ctx!,
+                })
             }),
             executor = async () => {
                 try {
@@ -319,7 +311,7 @@ export const processFilesWithConfig = async (
 ) => {
     if (!worker.isLoaded()) await worker.load()
 
-    GlobalMessenger.stopLiveRendering!()
+    GlobalMessenger.preview.stopLiveRendering!()
 
     const fileNameToMEMFSFileName = new Map<string, FileInfo>()
 
@@ -333,5 +325,5 @@ export const processFilesWithConfig = async (
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
         await processInput(config, fileInfo, fileName, setPreviewCanvasSize)
 
-    GlobalMessenger.startLiveRendering!()
+    GlobalMessenger.preview.startLiveRendering!()
 }

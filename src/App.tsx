@@ -1,24 +1,11 @@
-import React, { useRef } from 'react'
-
-import type { WebPreviewConfig } from 'types/common'
+import React from 'react'
 
 import MainPage from 'components/page/Main.page'
 
 import 'scss/global.scss'
 
-export const defaults = {
-    width: 1280,
-    height: 720,
-    withTextInsteadOfChars: false,
-    withJustGreen: false,
-    withSpeechUpdatedText: false,
-    groupBy: 15,
-}
-
 function App() {
-    const configObj = useRef<WebPreviewConfig>(defaults)
-
-    return <MainPage configObj={configObj} />
+    return <MainPage />
 }
 
 export default App

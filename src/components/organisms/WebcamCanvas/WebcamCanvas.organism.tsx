@@ -1,21 +1,11 @@
-import React, { MutableRefObject, useEffect, useRef } from 'react'
-
-import type { WebPreviewConfig } from 'types/common'
+import React, { useEffect, useRef } from 'react'
 
 import { GlobalMessenger } from 'helpers/globalMessenger'
 import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
-const WebcamCanvas = ({
-    configObj,
-    width,
-    height,
-}: {
-    configObj: MutableRefObject<WebPreviewConfig>
-    width: number
-    height: number
-}) => {
+const WebcamCanvas = ({ width, height }: { width: number; height: number }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null),
         vidRef = useRef<HTMLVideoElement>(null),
         // replace with offscreen canvas?
@@ -29,16 +19,16 @@ const WebcamCanvas = ({
 
         GlobalMessenger.ctx = ctx
 
-        GlobalMessenger.stopLiveRendering = () => {
+        GlobalMessenger.preview.stopLiveRendering = () => {
             persistGateRef.current = false
         }
 
-        GlobalMessenger.startLiveRendering = () => {
+        GlobalMessenger.preview.startLiveRendering = () => {
             persistGateRef.current = true
-            playPreview(ctx, vidRef.current!, vidCtx, configObj, persistGateRef)
+            playPreview(ctx, vidRef.current!, vidCtx, persistGateRef)
         }
 
-        GlobalMessenger.startLiveRendering()
+        GlobalMessenger.preview.startLiveRendering()
     }, [])
 
     return (

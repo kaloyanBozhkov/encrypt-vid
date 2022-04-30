@@ -16,10 +16,11 @@ export const renderGroupPixelsAsLetters = ({
     ctx: CanvasRenderingContext2D
     withTextInsteadOfChars?: boolean
 }) => {
-    const darkCharsetStatic = '.,_-~:',
-        chars = `${darkCharsetStatic}${GlobalMessenger.charsObj.chars}`,
-        getKey = (luminance: number, chars: string) =>
-            ((luminance >= 255 ? 255 : luminance) * chars.length) / 255
+    const darkCharsetStatic = '.,_-~:'
+
+    let chars = `${darkCharsetStatic}${GlobalMessenger.renderSettings.charsObj.chars}`
+
+    const getKey = (luminance: number, chars: string) => (luminance * chars.length) / 255
 
     ctx.font = `${groupBy}px Matrix`
     ctx.textBaseline = 'middle'
@@ -48,19 +49,17 @@ export const renderGroupPixelsAsLetters = ({
     } else {
         let charCounter = 0
 
+        chars = `${darkCharsetStatic}${GlobalMessenger.renderSettings.charsObj.text}`
+
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
                 const aToScale0To1 = (a * 100) / 255 / 100,
-                    key = Math.round(
-                        getKey(calculateLuminance({ r, g, b } as PixelInfo), 'asd123asdsadas')
-                    )
+                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
 
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
                 ctx.fillText(
-                    key < darkCharsetStatic.length
-                        ? darkCharsetStatic[key]
-                        : GlobalMessenger.charsObj.text[charCounter],
+                    chars[key] || chars[chars.length - 1],
                     centerShift_x + cellIdx * groupBy + groupBy / 2,
                     centerShift_y + rowIdx * groupBy + groupBy / 2,
                     groupBy
@@ -68,7 +67,7 @@ export const renderGroupPixelsAsLetters = ({
 
                 if (key >= darkCharsetStatic.length)
                     charCounter =
-                        charCounter + 1 === GlobalMessenger.charsObj.text.length
+                        charCounter + 1 === GlobalMessenger.renderSettings.charsObj.text.length
                             ? 0
                             : charCounter + 1
             })
