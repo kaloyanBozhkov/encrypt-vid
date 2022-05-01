@@ -42,8 +42,6 @@ const renderLetterFrameForEachImageBuffer = ({
     textMode = false,
 }: {
     files: ImgAsArrayBufferWithInfo[]
-    width: number
-    height: number
     groupBy: number
     greenMode?: boolean
     textMode?: boolean
@@ -143,10 +141,7 @@ const copyInputFilesIntoMEMFS = (
 
 type ImgAsArrayBufferWithInfo = {
     fileName: string
-    fileSize: {
-        width: number
-        height: number
-    }
+    fileSize: Resolution
     fileContents: Uint8Array
 }
 
@@ -191,12 +186,7 @@ const writeFormattedFileToMEMFS = (files: ImgAsArrayBufferWithInfo[]) => {
     files.forEach(({ fileName, fileContents }) => worker.FS('writeFile', fileName, fileContents))
 }
 
-const processInput = async (
-    config: VidConfig,
-    { inputName, type }: FileInfo,
-    fileName: string,
-    setPreviewCanvasSize: (size: Resolution | 'default') => void
-) => {
+const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fileName: string) => {
     const extension = inputName.split('.')[1]
 
     let url = '',
@@ -211,9 +201,6 @@ const processInput = async (
         const framesBufferArr = await getFramesAsBufferArr(inputName)
 
         size = framesBufferArr[0].fileSize
-
-        // first frame img size should be same as all other frame imgs
-        setPreviewCanvasSize(size)
 
         console.log('Formatting frames')
 
@@ -282,9 +269,6 @@ const processInput = async (
 
         size = imgBuffer.fileSize
 
-        // first frame img size should be same as all other frame imgs
-        setPreviewCanvasSize(size)
-
         console.log('Formatting image', imgBuffer)
 
         const [{ fileContents }] = await renderLetterFrameForEachImageBuffer({
@@ -300,15 +284,12 @@ const processInput = async (
 
     // clear preview
     GlobalMessenger.ctx?.clearRect(0, 0, size.width, size.height)
-    setPreviewCanvasSize('default')
+    GlobalMessenger.preview.setPreviewSize!('default')
 }
 
 type FileInfo = { inputName: string; type: string }
 
-export const processFilesWithConfig = async (
-    config: VidConfig,
-    setPreviewCanvasSize: (size: Resolution | 'default') => void
-) => {
+export const processFilesWithConfig = async (config: VidConfig) => {
     if (!worker.isLoaded()) await worker.load()
 
     GlobalMessenger.preview.stopLiveRendering!()
@@ -323,7 +304,7 @@ export const processFilesWithConfig = async (
 
     // process inputs
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
-        await processInput(config, fileInfo, fileName, setPreviewCanvasSize)
+        await processInput(config, fileInfo, fileName)
 
     GlobalMessenger.preview.startLiveRendering!()
 }

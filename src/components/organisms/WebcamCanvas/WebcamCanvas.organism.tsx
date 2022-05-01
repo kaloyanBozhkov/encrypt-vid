@@ -1,11 +1,13 @@
 import React, { useEffect, useRef } from 'react'
 
+import { Resolution } from 'types/common'
+
 import { GlobalMessenger } from 'helpers/globalMessenger'
 import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
-const WebcamCanvas = ({ width, height }: { width: number; height: number }) => {
+const WebcamCanvas = ({ width, height }: Resolution) => {
     const canvasRef = useRef<HTMLCanvasElement>(null),
         vidRef = useRef<HTMLVideoElement>(null),
         // replace with offscreen canvas?

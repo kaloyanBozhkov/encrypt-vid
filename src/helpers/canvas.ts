@@ -1,3 +1,5 @@
+import { Resolution } from 'types/common'
+
 import { getAveragePixelInfoPerGroupedBlockOfPixels } from './helpers'
 
 export const drawImageScaled = (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
@@ -58,8 +60,8 @@ export const drawImageFittingWithinParentBounds = ({
     imageData,
     withoutClear = true,
 }: {
-    fileSize: { width: number; height: number }
-    parentSize: { width: number; height: number }
+    fileSize: Resolution
+    parentSize: Resolution
     ctx: CanvasRenderingContext2D
     imageData: CanvasImageSource
     withoutClear?: boolean

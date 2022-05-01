@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { VidConfig } from 'types/common'
+import { Resolution, VidConfig } from 'types/common'
 
 import Dropzone from 'components/organisms/Dropzone/Dropzone'
 
@@ -41,7 +41,7 @@ const Settings = ({
     onWidthChanged: (n: number) => void
     onHeightChanged: (n: number) => void
     onConfigReady: (config: VidConfig) => void
-    defaultSize: { width: number; height: number }
+    defaultSize: Resolution
 }) => {
     const [width, setWidth] = useInputState(defaultSize.width),
         [height, setHeight] = useInputState(defaultSize.height),

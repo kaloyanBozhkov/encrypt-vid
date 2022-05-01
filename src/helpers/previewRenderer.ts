@@ -47,7 +47,8 @@ export const playPreview = (
 
             vid.play()
                 .then(() => {
-                    GlobalMessenger.preview.setPreviewSize?.({
+                    // based on webcam resolution set preview size
+                    GlobalMessenger.preview.setPreviewSize!({
                         width: vid.videoWidth,
                         height: vid.videoHeight,
                     })

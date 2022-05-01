@@ -23,6 +23,9 @@ const MainPage = () => {
     })
 
     useEffect(() => {
+        alert('a')
+    }, [size])
+    useEffect(() => {
         GlobalMessenger.preview.setPreviewSizeSetter(setSize)
     }, [])
 
@@ -34,16 +37,7 @@ const MainPage = () => {
                     onHeightChanged={(height) => setSize((prev) => ({ ...prev, height }))}
                     onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
                     onConfigReady={(config) => {
-                        processFilesWithConfig(config, (newSize: Resolution | 'default') =>
-                            setSize(
-                                newSize === 'default'
-                                    ? {
-                                          width: size.width,
-                                          height: size.height,
-                                      }
-                                    : newSize
-                            )
-                        )
+                        processFilesWithConfig(config)
                     }}
                 />
             }

@@ -1,3 +1,5 @@
+import { Resolution } from 'types/common'
+
 import {
     renderBlurryPixels,
     renderGroupPixelsAsLetters,
@@ -7,10 +9,10 @@ import {
 // context between react components and the js logic ran on each RequestAnimationFrame
 export const GlobalMessenger: {
     preview: {
-        setPreviewSize: null | ((size: { width: number; height: number }) => void)
+        setPreviewSize: null | ((size: Resolution | 'default') => void)
         setPreviewSizeSetter: (
             this: typeof GlobalMessenger['preview'],
-            setter: (size: { width: number; height: number }) => void
+            setter: (size: Resolution) => void
         ) => void
         stopLiveRendering: null | (() => void)
         startLiveRendering: null | (() => void)
@@ -97,7 +99,13 @@ export const GlobalMessenger: {
     preview: {
         setPreviewSize: null,
         setPreviewSizeSetter(setter) {
-            this.setPreviewSize = setter
+            let ogSize: Resolution | null = null
+
+            this.setPreviewSize = (size) => {
+                if (!ogSize && size !== 'default') ogSize = size
+                if (size === 'default') return setter(ogSize!)
+                setter(size)
+            }
         },
         stopLiveRendering: null,
         startLiveRendering: null,
