@@ -1,4 +1,4 @@
-import { GlobalMessenger } from './globalMessenger'
+import { globalMessenger } from './globalMessenger'
 import { PixelInfo, calculateLuminance, formattedBlockOfPixelsToImage } from './helpers'
 
 export const renderGroupPixelsAsLetters = ({
@@ -8,6 +8,7 @@ export const renderGroupPixelsAsLetters = ({
     centerShift_y,
     ctx,
     withTextInsteadOfChars = false,
+    withSpeechInsteadofChars = false,
 }: {
     formattedAvg: PixelInfo[][]
     groupBy: number
@@ -15,10 +16,11 @@ export const renderGroupPixelsAsLetters = ({
     centerShift_y: number
     ctx: CanvasRenderingContext2D
     withTextInsteadOfChars?: boolean
+    withSpeechInsteadofChars?: boolean
 }) => {
     const darkCharsetStatic = '.,_-~:'
 
-    let chars = `${darkCharsetStatic}${GlobalMessenger.renderSettings.charsObj.chars}`
+    let chars = `${darkCharsetStatic}${globalMessenger.renderSettings.charsObj.chars}`
 
     const getKey = (luminance: number, chars: string) => (luminance * chars.length) / 255
 
@@ -26,30 +28,38 @@ export const renderGroupPixelsAsLetters = ({
     ctx.textBaseline = 'middle'
     ctx.textAlign = 'center'
 
-    if (!withTextInsteadOfChars) {
-        const curry = (cell: PixelInfo) =>
-                chars[Math.floor(getKey(calculateLuminance(cell), chars))] ||
-                chars[chars.length - 1],
-            letterImageInfo = formattedAvg.map((row) => row.map(curry))
+    if (withSpeechInsteadofChars) {
+        let charCounter = 0
 
-        letterImageInfo.forEach((row, rowIdx) => {
-            row.forEach((cell, cellIdx) => {
-                const { r, g, b, a } = formattedAvg[rowIdx][cellIdx],
-                    aToScale0To1 = (a * 100) / 255 / 100
+        formattedAvg.forEach((row, rowIdx) => {
+            row.forEach(({ r, g, b, a }, cellIdx) => {
+                const aToScale0To1 = (a * 100) / 255 / 100,
+                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
+
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
                 ctx.fillText(
-                    cell,
+                    globalMessenger.renderSettings.charsObj.speech[charCounter],
                     centerShift_x + cellIdx * groupBy + groupBy / 2,
                     centerShift_y + rowIdx * groupBy + groupBy / 2,
                     groupBy
                 )
+
+                if (key >= darkCharsetStatic.length)
+                    charCounter =
+                        charCounter + 1 === globalMessenger.renderSettings.charsObj.speech.length
+                            ? 0
+                            : charCounter + 1
             })
         })
-    } else {
+
+        return
+    }
+
+    if (withTextInsteadOfChars) {
         let charCounter = 0
 
-        chars = `${darkCharsetStatic}${GlobalMessenger.renderSettings.charsObj.text}`
+        chars = `${darkCharsetStatic}${globalMessenger.renderSettings.charsObj.text}`
 
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
@@ -67,12 +77,34 @@ export const renderGroupPixelsAsLetters = ({
 
                 if (key >= darkCharsetStatic.length)
                     charCounter =
-                        charCounter + 1 === GlobalMessenger.renderSettings.charsObj.text.length
+                        charCounter + 1 === globalMessenger.renderSettings.charsObj.text.length
                             ? 0
                             : charCounter + 1
             })
         })
+
+        return
     }
+
+    // default
+    const curry = (cell: PixelInfo) =>
+            chars[Math.floor(getKey(calculateLuminance(cell), chars))] || chars[chars.length - 1],
+        letterImageInfo = formattedAvg.map((row) => row.map(curry))
+
+    letterImageInfo.forEach((row, rowIdx) => {
+        row.forEach((cell, cellIdx) => {
+            const { r, g, b, a } = formattedAvg[rowIdx][cellIdx],
+                aToScale0To1 = (a * 100) / 255 / 100
+            ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
+
+            ctx.fillText(
+                cell,
+                centerShift_x + cellIdx * groupBy + groupBy / 2,
+                centerShift_y + rowIdx * groupBy + groupBy / 2,
+                groupBy
+            )
+        })
+    })
 }
 
 export const renderGroupPixelsAsSquares = ({

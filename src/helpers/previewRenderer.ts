@@ -1,6 +1,6 @@
 import { MutableRefObject } from 'react'
 
-import { GlobalMessenger } from './globalMessenger'
+import { globalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 import { speechToText } from './speechToText'
 
@@ -33,22 +33,26 @@ export const playPreview = (
                             vidCtx.canvas.width,
                             vidCtx.canvas.height
                         ),
-                        groupBy: GlobalMessenger.renderSettings.groupBy,
-                        greenMode: GlobalMessenger.renderSettings.withJustGreen,
+                        groupBy: globalMessenger.renderSettings.groupBy,
+                        greenMode: globalMessenger.renderSettings.withJustGreen,
                         withTextInsteadOfChars:
-                            GlobalMessenger.renderSettings.withTextInsteadOfChars,
+                            globalMessenger.renderSettings.withTextInsteadOfChars,
+                        withSpeechInsteadofChars:
+                            globalMessenger.renderSettings.withSpeechUpdatedText,
                     })
 
                     if (persistGateRef.current) {
                         animateWebcamIntoCanvas()
                     } else ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
                 })
+
+                if (globalMessenger.renderSettings.withSpeechUpdatedText) speechToText()
             }
 
             vid.play()
                 .then(() => {
                     // based on webcam resolution set preview size
-                    GlobalMessenger.preview.webcamSize = {
+                    globalMessenger.preview.webcamSize = {
                         width: vid.videoWidth,
                         height: vid.videoHeight,
                     }
@@ -66,10 +70,4 @@ export const playPreview = (
         .catch((err) => {
             console.error('issue', err)
         })
-
-    if (
-        GlobalMessenger.renderSettings.withTextInsteadOfChars &&
-        GlobalMessenger.renderSettings.withSpeechUpdatedText
-    )
-        speechToText()
 }

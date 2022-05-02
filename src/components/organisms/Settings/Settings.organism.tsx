@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Resolution, VidConfig } from 'types/common'
 
@@ -18,7 +18,7 @@ import {
 import { MIME_TYPES } from '@mantine/dropzone'
 import { useInputState } from '@mantine/hooks'
 
-import { GlobalMessenger } from 'helpers/globalMessenger'
+import { globalMessenger } from 'helpers/globalMessenger'
 
 import styles from './settings.module.scss'
 
@@ -57,29 +57,32 @@ const Settings = ({
             b: 0,
         }),
         [files, setFiles] = useState<File[]>([]),
-        [customChars, setCustomChars] = useState(GlobalMessenger.renderSettings.charsObj.text),
+        onClear = useCallback((fileName) => {
+            setFiles((prev) => prev.filter((currContent) => currContent.name !== fileName))
+        }, []),
+        [customChars, setCustomChars] = useState(globalMessenger.renderSettings.charsObj.text),
         [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
         effectNames = useMemo(
             () =>
-                Object.keys(GlobalMessenger.renderSettings.algorithms).map(
+                Object.keys(globalMessenger.renderSettings.algorithms).map(
                     (key) => key[0].toUpperCase() + key.substring(1)
                 ),
             []
         )
 
     useEffect(() => {
-        if (!withCustomLuminance) GlobalMessenger.renderSettings.setCustomLuminance('default')
+        if (!withCustomLuminance) globalMessenger.renderSettings.setCustomLuminance('default')
 
         setCustomLuminance({
-            r: GlobalMessenger.renderSettings.luminanceWeights.r * 100,
-            g: GlobalMessenger.renderSettings.luminanceWeights.g * 100,
-            b: GlobalMessenger.renderSettings.luminanceWeights.b * 100,
+            r: globalMessenger.renderSettings.luminanceWeights.r * 100,
+            g: globalMessenger.renderSettings.luminanceWeights.g * 100,
+            b: globalMessenger.renderSettings.luminanceWeights.b * 100,
         })
     }, [withCustomLuminance])
 
     useEffect(() => {
         if (withCustomLuminance)
-            GlobalMessenger.renderSettings.setCustomLuminance({
+            globalMessenger.renderSettings.setCustomLuminance({
                 r: Number((customLuminance.r / 100).toPrecision(3)),
                 g: Number((customLuminance.g / 100).toPrecision(3)),
                 b: Number((customLuminance.b / 100).toPrecision(3)),
@@ -87,12 +90,12 @@ const Settings = ({
     }, [customLuminance])
 
     useEffect(() => {
-        GlobalMessenger.renderSettings.setActiveAlgorithm(effect)
+        globalMessenger.renderSettings.setActiveAlgorithm(effect)
     }, [effect])
 
     // update the chars used for encrypting - ReqAnimFrame will read the charsObj.text
     useEffect(() => {
-        GlobalMessenger.renderSettings.charsObj.text = customChars
+        globalMessenger.renderSettings.charsObj.text = customChars
     }, [customChars])
 
     // when preview is updated the resolution will change, show the change in settings as well
@@ -110,19 +113,20 @@ const Settings = ({
     }, [height])
 
     useEffect(() => {
-        GlobalMessenger.renderSettings.groupBy = groupBy
+        globalMessenger.renderSettings.groupBy = groupBy
     }, [groupBy])
 
     useEffect(() => {
-        GlobalMessenger.renderSettings.withJustGreen = matrixMode
+        globalMessenger.renderSettings.withJustGreen = matrixMode
     }, [matrixMode])
 
     useEffect(() => {
-        GlobalMessenger.renderSettings.withTextInsteadOfChars = textMode
+        globalMessenger.renderSettings.withTextInsteadOfChars = textMode
+        if (textMode && speechMode) setSpeechMode(false)
     }, [textMode])
 
     useEffect(() => {
-        GlobalMessenger.renderSettings.withSpeechUpdatedText = speechMode
+        globalMessenger.renderSettings.withSpeechUpdatedText = speechMode
     }, [speechMode])
 
     return (
@@ -205,7 +209,7 @@ const Settings = ({
                                 }
                             />
                         )}
-                        {textMode && effect === 'letters' && (
+                        {!textMode && effect === 'letters' && (
                             <Switch
                                 label="voice updates text"
                                 size="md"
@@ -270,6 +274,8 @@ const Settings = ({
                     <InputWrapper label="Files">
                         <Dropzone
                             onDrop={setFiles}
+                            onClear={onClear}
+                            files={files}
                             accept={[
                                 MIME_TYPES.mp4,
                                 'video/quicktime',
@@ -297,6 +303,8 @@ const Settings = ({
                             }
 
                             onConfigReady(config)
+
+                            setFiles([])
                         }}
                         disabled={!files.length}
                     >

@@ -1,11 +1,11 @@
 import { getFormattedAvg } from './canvas'
-import { GlobalMessenger } from './globalMessenger'
+import { globalMessenger } from './globalMessenger'
 import { renderGroupPixelsAsLetters } from './renderers'
 
 export const calculateLuminance = ({ r, g, b }: PixelInfo) =>
-    GlobalMessenger.renderSettings.luminanceWeights.r * r +
-    GlobalMessenger.renderSettings.luminanceWeights.g * g +
-    GlobalMessenger.renderSettings.luminanceWeights.b * b
+    globalMessenger.renderSettings.luminanceWeights.r * r +
+    globalMessenger.renderSettings.luminanceWeights.g * g +
+    globalMessenger.renderSettings.luminanceWeights.b * b
 
 /**
  * Runs the active algorithm passes it formattedAvg pixel matrix
@@ -17,6 +17,7 @@ export const runAlgorithm = ({
     groupBy,
     greenMode,
     withTextInsteadOfChars = false,
+    withSpeechInsteadofChars = false,
 }: {
     ctx: CanvasRenderingContext2D
     imageData?: ImageData
@@ -24,6 +25,7 @@ export const runAlgorithm = ({
     groupBy: number
     greenMode: boolean
     withTextInsteadOfChars?: boolean
+    withSpeechInsteadofChars?: boolean
 }) => {
     const formattedAvg = getFormattedAvg({
         ctx,
@@ -32,10 +34,11 @@ export const runAlgorithm = ({
         greenMode,
     })
 
-    GlobalMessenger.renderSettings.activeAlgorithm({
+    globalMessenger.renderSettings.activeAlgorithm({
         formattedAvg,
         groupBy,
         withTextInsteadOfChars,
+        withSpeechInsteadofChars,
         centerShift_x: 0,
         centerShift_y: 0,
         ctx,

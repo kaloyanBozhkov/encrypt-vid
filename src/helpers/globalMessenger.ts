@@ -7,10 +7,10 @@ import {
 } from './renderers'
 
 // context between react components and the js logic ran on each RequestAnimationFrame
-export const GlobalMessenger: {
+export const globalMessenger: {
     preview: {
         webcamSize: Resolution | null
-        readonly clearPreview: (this: typeof GlobalMessenger.preview) => void
+        readonly clearPreview: (this: typeof globalMessenger.preview) => void
         stopLiveRendering: null | (() => void)
         startLiveRendering: null | (() => void)
     }
@@ -19,7 +19,11 @@ export const GlobalMessenger: {
         withJustGreen: boolean
         withSpeechUpdatedText: boolean
         groupBy: number
-        charsObj: Record<'chars' | 'text', string>
+        readonly charsObj: {
+            text: string
+            readonly chars: string
+            speech: string
+        }
         readonly algorithms: {
             letters: typeof renderGroupPixelsAsLetters
             tiles: typeof renderGroupPixelsAsSquares
@@ -30,7 +34,7 @@ export const GlobalMessenger: {
             | typeof renderGroupPixelsAsSquares
             | typeof renderBlurryPixels
         readonly setActiveAlgorithm: (
-            algoName: keyof typeof GlobalMessenger.renderSettings.algorithms
+            algoName: keyof typeof globalMessenger.renderSettings.algorithms
         ) => void
         luminanceWeights: {
             r: number
@@ -51,6 +55,7 @@ export const GlobalMessenger: {
         charsObj: {
             chars: '4!?$P80OKBNMLHGFDASDQWETYU',
             text: '4!?$P80OKBNMLHGFDASDQWETYU',
+            speech: 'word',
         },
         algorithms: {
             letters: renderGroupPixelsAsLetters,
@@ -100,18 +105,18 @@ export const GlobalMessenger: {
         stopLiveRendering: null,
         startLiveRendering: null,
         clearPreview() {
-            if (!GlobalMessenger.ctx || !this.webcamSize)
+            if (!globalMessenger.ctx || !this.webcamSize)
                 return console.error('Tried clearing preview before having initialized it')
 
-            GlobalMessenger.ctx.clearRect(
+            globalMessenger.ctx.clearRect(
                 0,
                 0,
-                GlobalMessenger.ctx.canvas.width,
-                GlobalMessenger.ctx.canvas.height
+                globalMessenger.ctx.canvas.width,
+                globalMessenger.ctx.canvas.height
             )
 
-            GlobalMessenger.ctx!.canvas.width = this.webcamSize!.width
-            GlobalMessenger.ctx!.canvas.height = this.webcamSize!.height
+            globalMessenger.ctx!.canvas.width = this.webcamSize!.width
+            globalMessenger.ctx!.canvas.height = this.webcamSize!.height
         },
     },
     ctx: null,

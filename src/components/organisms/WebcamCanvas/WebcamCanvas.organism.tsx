@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import { Resolution } from 'types/common'
 
-import { GlobalMessenger } from 'helpers/globalMessenger'
+import { globalMessenger } from 'helpers/globalMessenger'
 import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
@@ -19,18 +19,18 @@ const WebcamCanvas = ({ size: { width, height } }: { size: Resolution }) => {
         const ctx = canvasRef.current!.getContext('2d') as CanvasRenderingContext2D,
             vidCtx = videoCanvasRef.current!.getContext('2d') as CanvasRenderingContext2D
 
-        GlobalMessenger.ctx = ctx
+        globalMessenger.ctx = ctx
 
-        GlobalMessenger.preview.stopLiveRendering = () => {
+        globalMessenger.preview.stopLiveRendering = () => {
             persistGateRef.current = false
         }
 
-        GlobalMessenger.preview.startLiveRendering = () => {
+        globalMessenger.preview.startLiveRendering = () => {
             persistGateRef.current = true
             playPreview(ctx, vidRef.current!, vidCtx, persistGateRef)
         }
 
-        GlobalMessenger.preview.startLiveRendering()
+        globalMessenger.preview.startLiveRendering()
     }, [])
 
     return (

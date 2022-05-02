@@ -1,4 +1,4 @@
-import React, { SyntheticEvent, useCallback, useState } from 'react'
+import React, { SyntheticEvent, useState } from 'react'
 
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { faFile, faFileCircleXmark, faFileUpload } from '@fortawesome/free-solid-svg-icons'
@@ -38,12 +38,14 @@ const FileDropped = ({
     </Group>
 )
 
-const Dropzone = ({ onDrop, onReject, ...props }: Omit<DropzoneProps, 'children'>) => {
-    const [status, setStatus] = useState<'rejected' | 'accepted' | 'pending'>('pending'),
-        [files, setFiles] = useState<File[]>([]),
-        clearFile = useCallback((fileName) => {
-            setFiles((prev) => prev.filter((currContent) => currContent.name !== fileName))
-        }, [])
+const Dropzone = ({
+    onDrop,
+    onReject,
+    onClear,
+    files,
+    ...props
+}: Omit<DropzoneProps, 'children'> & { files: File[]; onClear: (fileName: string) => void }) => {
+    const [status, setStatus] = useState<'rejected' | 'accepted' | 'pending'>('pending')
 
     let currentIcon = faFileUpload
 
@@ -58,7 +60,6 @@ const Dropzone = ({ onDrop, onReject, ...props }: Omit<DropzoneProps, 'children'
             {...props}
             onDrop={(files) => {
                 setStatus('accepted')
-                setFiles(files)
                 onDrop(files)
             }}
             onReject={(files) => {
@@ -73,7 +74,7 @@ const Dropzone = ({ onDrop, onReject, ...props }: Omit<DropzoneProps, 'children'
                             key={name}
                             currentIcon={currentIcon}
                             fileName={name}
-                            clearFile={clearFile}
+                            clearFile={onClear}
                         />
                     ))
                 ) : (

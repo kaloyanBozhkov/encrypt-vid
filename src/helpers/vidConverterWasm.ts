@@ -4,7 +4,7 @@ import { Resolution, VidConfig } from 'types/common'
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
 
 import { drawImageFittingWithinParentBounds } from './canvas'
-import { GlobalMessenger } from './globalMessenger'
+import { globalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 
 const worker = createFFmpeg({
@@ -88,7 +88,7 @@ const renderLetterFrameForEachImageBuffer = ({
                         width: window.innerWidth,
                         height: window.innerHeight,
                     },
-                    ctx: GlobalMessenger.ctx!,
+                    ctx: globalMessenger.ctx!,
                 })
             }),
             executor = async () => {
@@ -277,7 +277,7 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
 
     downloadBlob({ url, fileName })
 
-    GlobalMessenger.preview.clearPreview()
+    globalMessenger.preview.clearPreview()
 }
 
 type FileInfo = { inputName: string; type: string }
@@ -285,7 +285,7 @@ type FileInfo = { inputName: string; type: string }
 export const processFilesWithConfig = async (config: VidConfig) => {
     if (!worker.isLoaded()) await worker.load()
 
-    GlobalMessenger.preview.stopLiveRendering!()
+    globalMessenger.preview.stopLiveRendering!()
 
     const fileNameToMEMFSFileName = new Map<string, FileInfo>()
 
@@ -299,5 +299,5 @@ export const processFilesWithConfig = async (config: VidConfig) => {
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
         await processInput(config, fileInfo, fileName)
 
-    GlobalMessenger.preview.startLiveRendering!()
+    globalMessenger.preview.startLiveRendering!()
 }
