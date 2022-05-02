@@ -7,7 +7,7 @@ import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
-const WebcamCanvas = ({ width, height }: Resolution) => {
+const WebcamCanvas = ({ size: { width, height } }: { size: Resolution }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null),
         vidRef = useRef<HTMLVideoElement>(null),
         // replace with offscreen canvas?

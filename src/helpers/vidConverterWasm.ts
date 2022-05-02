@@ -189,8 +189,7 @@ const writeFormattedFileToMEMFS = (files: ImgAsArrayBufferWithInfo[]) => {
 const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fileName: string) => {
     const extension = inputName.split('.')[1]
 
-    let url = '',
-        size = { width: 0, height: 0 }
+    let url = ''
 
     if (['mp4', 'mov'].includes(extension)) {
         // vid to frmaes
@@ -199,8 +198,6 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         console.log('Getting frames from MEMFS as Buffer')
 
         const framesBufferArr = await getFramesAsBufferArr(inputName)
-
-        size = framesBufferArr[0].fileSize
 
         console.log('Formatting frames')
 
@@ -267,8 +264,6 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         // should never run
         if (!imgBuffer) return console.log('Issue getting file from MEMFS')
 
-        size = imgBuffer.fileSize
-
         console.log('Formatting image', imgBuffer)
 
         const [{ fileContents }] = await renderLetterFrameForEachImageBuffer({
@@ -282,9 +277,7 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
 
     downloadBlob({ url, fileName })
 
-    // clear preview
-    GlobalMessenger.ctx?.clearRect(0, 0, size.width, size.height)
-    GlobalMessenger.preview.setPreviewSize!('default')
+    GlobalMessenger.preview.clearPreview()
 }
 
 type FileInfo = { inputName: string; type: string }

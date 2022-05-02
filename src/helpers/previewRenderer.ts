@@ -48,10 +48,10 @@ export const playPreview = (
             vid.play()
                 .then(() => {
                     // based on webcam resolution set preview size
-                    GlobalMessenger.preview.setPreviewSize!({
+                    GlobalMessenger.preview.webcamSize = {
                         width: vid.videoWidth,
                         height: vid.videoHeight,
-                    })
+                    }
 
                     animateWebcamIntoCanvas()
                 })

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 
 import type { Resolution } from 'types/common'
 
@@ -7,7 +7,6 @@ import WebcamCanvas from 'components/organisms/WebcamCanvas/WebcamCanvas.organis
 
 import MainLayout from 'components/layouts/MainLayout/Main.layout'
 
-import { GlobalMessenger } from 'helpers/globalMessenger'
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
 
 // used initially untill webcam usage approved & set size based on media device capability
@@ -22,13 +21,6 @@ const MainPage = () => {
         height: defaultSize.height,
     })
 
-    useEffect(() => {
-        alert('a')
-    }, [size])
-    useEffect(() => {
-        GlobalMessenger.preview.setPreviewSizeSetter(setSize)
-    }, [])
-
     return (
         <MainLayout
             menu={
@@ -42,7 +34,7 @@ const MainPage = () => {
                 />
             }
         >
-            <WebcamCanvas {...size} />
+            <WebcamCanvas size={size} />
         </MainLayout>
     )
 }

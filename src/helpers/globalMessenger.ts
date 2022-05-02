@@ -9,11 +9,8 @@ import {
 // context between react components and the js logic ran on each RequestAnimationFrame
 export const GlobalMessenger: {
     preview: {
-        setPreviewSize: null | ((size: Resolution | 'default') => void)
-        setPreviewSizeSetter: (
-            this: typeof GlobalMessenger['preview'],
-            setter: (size: Resolution) => void
-        ) => void
+        webcamSize: Resolution | null
+        readonly clearPreview: (this: typeof GlobalMessenger.preview) => void
         stopLiveRendering: null | (() => void)
         startLiveRendering: null | (() => void)
     }
@@ -23,7 +20,7 @@ export const GlobalMessenger: {
         withSpeechUpdatedText: boolean
         groupBy: number
         charsObj: Record<'chars' | 'text', string>
-        algorithms: {
+        readonly algorithms: {
             letters: typeof renderGroupPixelsAsLetters
             tiles: typeof renderGroupPixelsAsSquares
             blurry: typeof renderBlurryPixels
@@ -32,7 +29,7 @@ export const GlobalMessenger: {
             | typeof renderGroupPixelsAsLetters
             | typeof renderGroupPixelsAsSquares
             | typeof renderBlurryPixels
-        setActiveAlgorithm: (
+        readonly setActiveAlgorithm: (
             algoName: keyof typeof GlobalMessenger.renderSettings.algorithms
         ) => void
         luminanceWeights: {
@@ -40,7 +37,9 @@ export const GlobalMessenger: {
             g: number
             b: number
         }
-        setCustomLuminance: (weights: { r: number; g: number; b: number } | 'default') => void
+        readonly setCustomLuminance: (
+            weights: { r: number; g: number; b: number } | 'default'
+        ) => void
     }
     ctx: CanvasRenderingContext2D | null
 } = {
@@ -97,18 +96,23 @@ export const GlobalMessenger: {
         },
     },
     preview: {
-        setPreviewSize: null,
-        setPreviewSizeSetter(setter) {
-            let ogSize: Resolution | null = null
-
-            this.setPreviewSize = (size) => {
-                if (!ogSize && size !== 'default') ogSize = size
-                if (size === 'default') return setter(ogSize!)
-                setter(size)
-            }
-        },
+        webcamSize: null,
         stopLiveRendering: null,
         startLiveRendering: null,
+        clearPreview() {
+            if (!GlobalMessenger.ctx || !this.webcamSize)
+                return console.error('Tried clearing preview before having initialized it')
+
+            GlobalMessenger.ctx.clearRect(
+                0,
+                0,
+                GlobalMessenger.ctx.canvas.width,
+                GlobalMessenger.ctx.canvas.height
+            )
+
+            GlobalMessenger.ctx!.canvas.width = this.webcamSize!.width
+            GlobalMessenger.ctx!.canvas.height = this.webcamSize!.height
+        },
     },
     ctx: null,
 }
