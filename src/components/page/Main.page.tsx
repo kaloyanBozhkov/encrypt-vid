@@ -28,8 +28,8 @@ const MainPage = () => {
                     defaultSize={size}
                     onHeightChanged={(height) => setSize((prev) => ({ ...prev, height }))}
                     onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
-                    onConfigReady={(config) => {
-                        processFilesWithConfig(config)
+                    onConfigReady={(config, finishedProcessing) => {
+                        processFilesWithConfig(config, finishedProcessing)
                     }}
                 />
             }

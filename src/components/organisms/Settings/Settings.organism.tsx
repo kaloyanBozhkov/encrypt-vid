@@ -40,7 +40,7 @@ const Settings = ({
 }: {
     onWidthChanged: (n: number) => void
     onHeightChanged: (n: number) => void
-    onConfigReady: (config: VidConfig) => void
+    onConfigReady: (config: VidConfig, finishedProcessing: () => void) => void
     defaultSize: Resolution
 }) => {
     const [width, setWidth] = useInputState(defaultSize.width),
@@ -60,6 +60,24 @@ const Settings = ({
         onClear = useCallback((fileName) => {
             setFiles((prev) => prev.filter((currContent) => currContent.name !== fileName))
         }, []),
+        dropZoneMemoized = useMemo(
+            () => (
+                <InputWrapper label="Files">
+                    <Dropzone
+                        onDrop={setFiles}
+                        onClear={onClear}
+                        files={files}
+                        accept={[
+                            MIME_TYPES.mp4,
+                            'video/quicktime',
+                            MIME_TYPES.jpeg,
+                            MIME_TYPES.png,
+                        ]}
+                    />
+                </InputWrapper>
+            ),
+            [files]
+        ),
         [customChars, setCustomChars] = useState(globalMessenger.renderSettings.charsObj.text),
         [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
         effectNames = useMemo(
@@ -271,19 +289,7 @@ const Settings = ({
                             </InputWrapper>
                         </InputWrapper>
                     )}
-                    <InputWrapper label="Files">
-                        <Dropzone
-                            onDrop={setFiles}
-                            onClear={onClear}
-                            files={files}
-                            accept={[
-                                MIME_TYPES.mp4,
-                                'video/quicktime',
-                                MIME_TYPES.jpeg,
-                                MIME_TYPES.png,
-                            ]}
-                        />
-                    </InputWrapper>
+                    {dropZoneMemoized}
                     <Button
                         variant="subtle"
                         color="dark"
@@ -302,9 +308,7 @@ const Settings = ({
                                 greenMode: matrixMode,
                             }
 
-                            onConfigReady(config)
-
-                            setFiles([])
+                            onConfigReady(config, () => setFiles([]))
                         }}
                         disabled={!files.length}
                     >

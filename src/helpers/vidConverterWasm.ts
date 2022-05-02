@@ -282,7 +282,7 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
 
 type FileInfo = { inputName: string; type: string }
 
-export const processFilesWithConfig = async (config: VidConfig) => {
+export const processFilesWithConfig = async (config: VidConfig, finishedProcessing: () => void) => {
     if (!worker.isLoaded()) await worker.load()
 
     globalMessenger.preview.stopLiveRendering!()
@@ -300,4 +300,6 @@ export const processFilesWithConfig = async (config: VidConfig) => {
         await processInput(config, fileInfo, fileName)
 
     globalMessenger.preview.startLiveRendering!()
+
+    finishedProcessing()
 }
