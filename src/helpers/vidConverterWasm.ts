@@ -186,12 +186,24 @@ const writeFormattedFileToMEMFS = (files: ImgAsArrayBufferWithInfo[]) => {
     files.forEach(({ fileName, fileContents }) => worker.FS('writeFile', fileName, fileContents))
 }
 
-const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fileName: string) => {
+const processInput = async ({
+    config,
+    fileInfo: { inputName, type },
+    fileName,
+    setProcessingMsg,
+}: {
+    config: VidConfig
+    fileInfo: FileInfo
+    fileName: string
+    setProcessingMsg: (msg: string) => void
+}) => {
     const extension = inputName.split('.')[1]
 
     let url = ''
 
     if (['mp4', 'mov'].includes(extension)) {
+        setProcessingMsg(`Extracting frames from "${fileName}"`)
+
         // vid to frmaes
         await worker.run('-i', inputName, `frame-${inputName.split('.')[0]}-%06d.jpg`)
 
@@ -199,6 +211,7 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
 
         const framesBufferArr = await getFramesAsBufferArr(inputName)
 
+        setProcessingMsg(`Formatting frames for "${fileName}"`)
         console.log('Formatting frames')
 
         const formattedFramesBufferArr = await renderLetterFrameForEachImageBuffer({
@@ -212,6 +225,8 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         writeFormattedFileToMEMFS(formattedFramesBufferArr)
 
         console.log('Finsihed writing formatted frames to MEMFS')
+
+        setProcessingMsg(`Rendering output for "${fileName}"`)
 
         console.log('Rendering video..')
 
@@ -257,6 +272,8 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         // eslint-disable-next-line
         url = window.URL.createObjectURL(new Blob([fileArrayBuffer], { type }))
     } else if (['jpg', 'png', 'jpeg'].includes(extension)) {
+        setProcessingMsg(`Copying "${fileName}"`)
+
         console.log('Getting image from MEMFS as Buffer')
 
         const imgBuffer = await getImageAsBuffer(inputName)
@@ -264,6 +281,7 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         // should never run
         if (!imgBuffer) return console.log('Issue getting file from MEMFS')
 
+        setProcessingMsg(`Formatting "${fileName}"`)
         console.log('Formatting image', imgBuffer)
 
         const [{ fileContents }] = await renderLetterFrameForEachImageBuffer({
@@ -275,9 +293,12 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
         url = window.URL.createObjectURL(new Blob([fileContents], { type }))
     }
 
+    setProcessingMsg(`Saving output from "${fileName}"`)
+
     downloadBlob({ url, fileName })
 
     globalMessenger.preview.clearPreview()
+    setProcessingMsg('')
 }
 
 type FileInfo = { inputName: string; type: string }
@@ -285,24 +306,20 @@ type FileInfo = { inputName: string; type: string }
 export const processFilesWithConfig = async (
     config: VidConfig,
     {
-        onLoadingWorker,
-        onCopyingFiles,
-        onFinishedProcessing,
-        onStartedProcessing,
+        setProcessingMsg,
+        finishedProcessing,
     }: {
-        onFinishedProcessing: () => void
-        onStartedProcessing: () => void
-        onLoadingWorker: () => void
-        onCopyingFiles: () => void
+        setProcessingMsg: (msg: string) => void
+        finishedProcessing: () => void
     }
 ) => {
     globalMessenger.preview.stopLiveRendering!()
 
-    onLoadingWorker()
+    setProcessingMsg('Loading worker')
 
     if (!worker.isLoaded()) await worker.load()
 
-    onCopyingFiles()
+    setProcessingMsg('Copying input files')
 
     const fileNameToMEMFSFileName = new Map<string, FileInfo>()
 
@@ -310,15 +327,14 @@ export const processFilesWithConfig = async (
 
     await copyInputFilesIntoMEMFS(config.files, fileNameToMEMFSFileName)
 
-    onStartedProcessing()
+    setProcessingMsg('Processing')
 
     console.log('Finished writing input files to MEMFS')
 
     // process inputs
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
-        await processInput(config, fileInfo, fileName)
+        await processInput({ config, fileInfo, fileName, setProcessingMsg })
 
     globalMessenger.preview.startLiveRendering!()
-
-    onFinishedProcessing()
+    finishedProcessing()
 }

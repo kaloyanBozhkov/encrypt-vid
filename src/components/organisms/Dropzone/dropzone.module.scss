@@ -10,14 +10,14 @@
 
     &[data-active="true"] {
         .text {
-            color: $green;
+            color: $secondary;
             word-break: break-all;
             flex: 1;
         }
 
         .group {
             svg {
-                color: $green;
+                color: $secondary;
             }
 
             &:not(:last-child) {

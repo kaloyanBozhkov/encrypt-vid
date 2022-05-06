@@ -22,9 +22,7 @@ const MainPage = () => {
             width: defaultSize.width,
             height: defaultSize.height,
         }),
-        [processing, setProcessing] = useState(false),
-        [loadingFFMPEGWorker, setLoadingFFMPEGWorker] = useState(false),
-        [copyingFiles, setCopyingFiles] = useState(false),
+        [processingMsg, setProcessingMsg] = useState(''),
         [step, setStep] = useState(0),
         SettingsMemoized = useMemo(
             () => (
@@ -34,19 +32,8 @@ const MainPage = () => {
                     onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
                     onConfigReady={(config, finishedProcessing) => {
                         processFilesWithConfig(config, {
-                            onLoadingWorker: () => setLoadingFFMPEGWorker(true),
-                            onCopyingFiles: () => {
-                                setLoadingFFMPEGWorker(false)
-                                setCopyingFiles(true)
-                            },
-                            onStartedProcessing: () => {
-                                setCopyingFiles(false)
-                                setProcessing(true)
-                            },
-                            onFinishedProcessing: () => {
-                                finishedProcessing()
-                                setProcessing(false)
-                            },
+                            setProcessingMsg,
+                            finishedProcessing,
                         })
                     }}
                 />
@@ -55,26 +42,20 @@ const MainPage = () => {
         ),
         WebacmCanvasMemoized = useMemo(() => <WebcamCanvas size={size} />, [size])
 
-    let operationStatusLabel = ''
-
-    if (processing) operationStatusLabel = 'Processing'
-    if (loadingFFMPEGWorker) operationStatusLabel = 'Loading worker'
-    if (copyingFiles) operationStatusLabel = 'Copying files'
-
     useEffect(() => {
         let intervalId: ReturnType<typeof setInterval> | undefined = undefined
 
-        if (processing || loadingFFMPEGWorker)
+        if (processingMsg)
             intervalId = setInterval(() => {
                 setStep((prev) => (prev + 1 > 3 ? 0 : prev + 1))
             }, 500)
 
         return () => intervalId && clearInterval(intervalId)
-    }, [processing || loadingFFMPEGWorker])
+    }, [processingMsg])
 
     return (
         <MainLayout menu={SettingsMemoized}>
-            {operationStatusLabel && <OperationStatus label={operationStatusLabel} step={step} />}
+            {processingMsg && <OperationStatus label={processingMsg} step={step} />}
             {WebacmCanvasMemoized}
         </MainLayout>
     )
