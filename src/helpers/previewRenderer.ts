@@ -1,5 +1,6 @@
 import { MutableRefObject } from 'react'
 
+import { drawImageFittingWithinParentBounds } from './canvas'
 import { globalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 import { speechToText } from './speechToText'
@@ -11,9 +12,6 @@ export const playPreview = (
     // used to stop webcam rendering
     persistGateRef: MutableRefObject<boolean>
 ) => {
-    // load webcam with letters
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
     navigator.mediaDevices
         .getUserMedia({ video: { width: 9999 }, audio: false })
         .then((stream) => {
@@ -22,11 +20,20 @@ export const playPreview = (
             const animateWebcamIntoCanvas = () => {
                 requestAnimationFrame(() => {
                     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-                    vidCtx.clearRect(0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
-                    vidCtx.drawImage(vid, 0, 0, vidCtx.canvas.width, vidCtx.canvas.height)
+
+                    // paint from webcam to canvas through video
+                    drawImageFittingWithinParentBounds({
+                        fileSize: globalMessenger.preview.webcamSize!,
+                        imageData: vid,
+                        parentSize: {
+                            width: window.innerWidth,
+                            height: window.innerHeight,
+                        },
+                        ctx: vidCtx,
+                    })
 
                     runAlgorithm({
-                        ctx,
+                        ctx: ctx,
                         imageData: vidCtx.getImageData(
                             0,
                             0,
@@ -41,9 +48,8 @@ export const playPreview = (
                             globalMessenger.renderSettings.withSpeechUpdatedText,
                     })
 
-                    if (persistGateRef.current) {
-                        animateWebcamIntoCanvas()
-                    } else ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+                    if (persistGateRef.current) animateWebcamIntoCanvas()
+                    else ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
                 })
 
                 if (globalMessenger.renderSettings.withSpeechUpdatedText) speechToText()
@@ -57,6 +63,17 @@ export const playPreview = (
                         height: vid.videoHeight,
                     }
 
+                    vidCtx.canvas.width = vid.videoWidth
+                    vidCtx.canvas.height = vid.videoHeight
+
+                    const setPreviewCanvasSize = () => {
+                        ctx.canvas.width = window.innerWidth
+                        ctx.canvas.height = window.innerHeight
+                    }
+
+                    window.addEventListener('resize', setPreviewCanvasSize)
+
+                    setPreviewCanvasSize()
                     animateWebcamIntoCanvas()
                 })
                 .catch((err) => {

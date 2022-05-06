@@ -1,0 +1,47 @@
+@import "scss/variables.scss";
+
+.operationStatus {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: $marginUnit;
+
+    p {
+        font-size: 2.5rem;
+        color: $textDimmed;
+        position: relative;
+
+        &::after {
+            position: absolute;
+            width: 2rem;
+            bottom: 0;
+        }
+
+        &[data-step="1"] {
+            &::after {
+                content: ".";
+                right: -1.5rem;
+            }
+        }
+        &[data-step="2"] {
+            &::after {
+                content: "..";
+                right: -3rem;
+            }
+        }
+        &[data-step="3"] {
+            &::after {
+                content: "...";
+                right: -5rem;
+            }
+        }
+    }
+
+    z-index: 10;
+}

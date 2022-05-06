@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import useResize from 'hooks/useResize/useResize'
 import { Resolution, VidConfig } from 'types/common'
 
-import Dropzone from 'components/organisms/Dropzone/Dropzone'
+import Dropzone from 'components/organisms/Dropzone/Dropzone.organism'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -49,7 +50,7 @@ const Settings = ({
         [matrixMode, setMatrixMode] = useState(false),
         [textMode, setTextMode] = useState(false),
         [speechMode, setSpeechMode] = useState(false),
-        [isVisible, setVisible] = useState(true),
+        [isVisible, setVisible] = useState(window.innerWidth > 900),
         [withCustomLuminance, settWithCustomLuminance] = useState(false),
         [customLuminance, setCustomLuminance] = useState({
             r: 0,
@@ -87,6 +88,8 @@ const Settings = ({
                 ),
             []
         )
+
+    useResize({ fn: setVisible })
 
     useEffect(() => {
         if (!withCustomLuminance) globalMessenger.renderSettings.setCustomLuminance('default')
@@ -227,16 +230,21 @@ const Settings = ({
                                 }
                             />
                         )}
-                        {!textMode && effect === 'letters' && (
-                            <Switch
-                                label="voice updates text"
-                                size="md"
-                                checked={speechMode}
-                                onChange={({ currentTarget: { checked } }) =>
-                                    setSpeechMode(checked)
-                                }
-                            />
-                        )}
+                        {!textMode &&
+                            effect === 'letters' &&
+                            Object.prototype.hasOwnProperty.call(
+                                window,
+                                'webkitSpeechRecognition'
+                            ) && (
+                                <Switch
+                                    label="voice updates text"
+                                    size="md"
+                                    checked={speechMode}
+                                    onChange={({ currentTarget: { checked } }) =>
+                                        setSpeechMode(checked)
+                                    }
+                                />
+                            )}
                         <Switch
                             label="custom luminance"
                             size="md"

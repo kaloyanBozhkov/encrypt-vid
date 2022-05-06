@@ -282,16 +282,35 @@ const processInput = async (config: VidConfig, { inputName, type }: FileInfo, fi
 
 type FileInfo = { inputName: string; type: string }
 
-export const processFilesWithConfig = async (config: VidConfig, finishedProcessing: () => void) => {
+export const processFilesWithConfig = async (
+    config: VidConfig,
+    {
+        onLoadingWorker,
+        onCopyingFiles,
+        onFinishedProcessing,
+        onStartedProcessing,
+    }: {
+        onFinishedProcessing: () => void
+        onStartedProcessing: () => void
+        onLoadingWorker: () => void
+        onCopyingFiles: () => void
+    }
+) => {
+    globalMessenger.preview.stopLiveRendering!()
+
+    onLoadingWorker()
+
     if (!worker.isLoaded()) await worker.load()
 
-    globalMessenger.preview.stopLiveRendering!()
+    onCopyingFiles()
 
     const fileNameToMEMFSFileName = new Map<string, FileInfo>()
 
     console.log('Writing input files to MEMFS')
 
     await copyInputFilesIntoMEMFS(config.files, fileNameToMEMFSFileName)
+
+    onStartedProcessing()
 
     console.log('Finished writing input files to MEMFS')
 
@@ -301,5 +320,5 @@ export const processFilesWithConfig = async (config: VidConfig, finishedProcessi
 
     globalMessenger.preview.startLiveRendering!()
 
-    finishedProcessing()
+    onFinishedProcessing()
 }
