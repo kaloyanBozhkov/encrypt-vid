@@ -189,7 +189,7 @@ const Settings = ({
                             type="number"
                             placeholder="Group Pixels By"
                             value={groupBy}
-                            onChange={setGroupBy}
+                            onChange={(val) => setGroupBy(val || 1)}
                         />
                     </InputWrapper>
                     <InputWrapper label="Video Effect">

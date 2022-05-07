@@ -13,6 +13,14 @@ const worker = createFFmpeg({
     corePath: '/dist/ffmpeg-core/ffmpeg-core.js',
 })
 
+// store names of file sused for temporary processing
+let filesToClean: string[] = []
+
+const cleanWorkingFiles = () => {
+    filesToClean.forEach((fileName) => worker.FS('unlink', `./${fileName}`))
+    filesToClean = []
+}
+
 const readFile = (file: File) =>
     new Promise<Uint8Array>((res, rej) => {
         const fileReader = new FileReader()
@@ -154,8 +162,10 @@ const getFramesAsBufferArr = async (inputName: string): Promise<ImgAsArrayBuffer
             fileName = `frame-${inputName.split('.')[0]}-${frameCount}.jpg`,
             img = await getImageAsBuffer(fileName, 'No more frames to read from MEMFS')
 
-        if (img) arr.push(img)
-        else break
+        if (img) {
+            arr.push(img)
+            filesToClean.push(fileName)
+        } else break
     }
 
     return arr
@@ -183,12 +193,17 @@ const getImageAsBuffer = async (
 }
 
 const writeFormattedFileToMEMFS = (files: ImgAsArrayBufferWithInfo[]) => {
-    files.forEach(({ fileName, fileContents }) => worker.FS('writeFile', fileName, fileContents))
+    files.forEach(({ fileName, fileContents }) => {
+        worker.FS('writeFile', fileName, fileContents)
+        filesToClean.push(fileName)
+    })
 }
 
 const processInput = async ({
     config,
+    /* inputNmae: name of file on MEMFS */
     fileInfo: { inputName, type },
+    /* name of file on PC */
     fileName,
     setProcessingMsg,
 }: {
@@ -199,7 +214,8 @@ const processInput = async ({
 }) => {
     const extension = inputName.split('.')[1]
 
-    let url = ''
+    let url = '',
+        outputFileName = ''
 
     if (['mp4', 'mov'].includes(extension)) {
         setProcessingMsg(`Extracting frames from "${fileName}"`)
@@ -210,6 +226,8 @@ const processInput = async ({
         console.log('Getting frames from MEMFS as Buffer')
 
         const framesBufferArr = await getFramesAsBufferArr(inputName)
+
+        globalMessenger.preview.setPreviewCanvasSize!(framesBufferArr[0].fileSize)
 
         setProcessingMsg(`Formatting frames for "${fileName}"`)
         console.log('Formatting frames')
@@ -266,13 +284,15 @@ const processInput = async ({
 
         console.log('Rendered video into MEMFS')
 
+        outputFileName = `output-${fileName}`
+
         // read output
-        const fileArrayBuffer = worker.FS('readFile', `output-${fileName}`)
+        const fileArrayBuffer = worker.FS('readFile', outputFileName)
 
         // eslint-disable-next-line
         url = window.URL.createObjectURL(new Blob([fileArrayBuffer], { type }))
     } else if (['jpg', 'png', 'jpeg'].includes(extension)) {
-        setProcessingMsg(`Copying "${fileName}"`)
+        setProcessingMsg(`Importing "${fileName}"`)
 
         console.log('Getting image from MEMFS as Buffer')
 
@@ -299,6 +319,7 @@ const processInput = async ({
 
     globalMessenger.preview.clearPreview()
     setProcessingMsg('')
+    if (outputFileName) filesToClean.push(outputFileName)
 }
 
 type FileInfo = { inputName: string; type: string }
@@ -327,14 +348,19 @@ export const processFilesWithConfig = async (
 
     await copyInputFilesIntoMEMFS(config.files, fileNameToMEMFSFileName)
 
-    setProcessingMsg('Processing')
-
     console.log('Finished writing input files to MEMFS')
 
     // process inputs
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
         await processInput({ config, fileInfo, fileName, setProcessingMsg })
 
+    // delete all temporary files on HDD
+    setProcessingMsg('Cleaning temporary files')
+    cleanWorkingFiles()
+
+    // resume webcam preview
     globalMessenger.preview.startLiveRendering!()
+
+    // reset dropzone
     finishedProcessing()
 }

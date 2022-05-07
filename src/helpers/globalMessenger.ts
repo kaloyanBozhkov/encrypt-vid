@@ -10,9 +10,16 @@ import {
 export const globalMessenger: {
     preview: {
         webcamSize: Resolution | null
+        currentFrameText: string
         readonly clearPreview: (this: typeof globalMessenger.preview) => void
+        readonly copyCurrentFrameText: (this: typeof globalMessenger.preview) => Promise<void>
         stopLiveRendering: null | (() => void)
         startLiveRendering: null | (() => void)
+        setPreviewCanvasSize: null | ((size: Resolution) => void)
+        readonly setPreviewCanvasSizeSetter: (
+            this: typeof globalMessenger['preview'],
+            fn: typeof globalMessenger['preview']['setPreviewCanvasSize']
+        ) => void
     }
     renderSettings: {
         withTextInsteadOfChars: boolean
@@ -104,6 +111,14 @@ export const globalMessenger: {
         webcamSize: null,
         stopLiveRendering: null,
         startLiveRendering: null,
+        currentFrameText: '',
+        copyCurrentFrameText() {
+            return navigator.clipboard.writeText(this.currentFrameText)
+        },
+        setPreviewCanvasSize: null,
+        setPreviewCanvasSizeSetter(setPreviewCanvasSize) {
+            this.setPreviewCanvasSize = setPreviewCanvasSize
+        },
         clearPreview() {
             if (!globalMessenger.ctx || !this.webcamSize)
                 return console.error('Tried clearing preview before having initialized it')

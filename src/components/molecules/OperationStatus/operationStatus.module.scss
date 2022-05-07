@@ -13,7 +13,7 @@
     padding: $marginUnit;
 
     p {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         color: $textDimmed;
         position: relative;
         background-color: $primary;
@@ -23,7 +23,6 @@
         &::after {
             content: "";
             position: absolute;
-            width: 2rem;
             bottom: 0;
             top: 0;
             left: 100%;
@@ -31,10 +30,11 @@
             justify-content: flex-start;
             align-items: flex-end;
             background-color: $primary;
-            width: 5rem;
+            width: 3rem;
             border-radius: 5px;
             border-bottom-left-radius: 0;
             border-top-left-radius: 0;
+            padding: 0.5rem 0;
         }
 
         &[data-step]:not([data-step="0"]) {

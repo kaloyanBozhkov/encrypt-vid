@@ -30,6 +30,7 @@ export const playPreview = (
                             height: window.innerHeight,
                         },
                         ctx: vidCtx,
+                        withoutClear: false,
                     })
 
                     runAlgorithm({
@@ -63,17 +64,16 @@ export const playPreview = (
                         height: vid.videoHeight,
                     }
 
-                    vidCtx.canvas.width = vid.videoWidth
-                    vidCtx.canvas.height = vid.videoHeight
-
                     const setPreviewCanvasSize = () => {
-                        ctx.canvas.width = window.innerWidth
-                        ctx.canvas.height = window.innerHeight
+                        globalMessenger.preview.setPreviewCanvasSize!({
+                            width: vid.videoWidth,
+                            height: vid.videoHeight,
+                        })
                     }
 
                     window.addEventListener('resize', setPreviewCanvasSize)
 
-                    setPreviewCanvasSize()
+                    // setPreviewCanvasSize()
                     animateWebcamIntoCanvas()
                 })
                 .catch((err) => {

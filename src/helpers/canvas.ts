@@ -1,5 +1,6 @@
 import { Resolution } from 'types/common'
 
+import { globalMessenger } from './globalMessenger'
 import { getAveragePixelInfoPerGroupedBlockOfPixels } from './helpers'
 
 export const drawImageScaled = (img: HTMLImageElement, ctx: CanvasRenderingContext2D) => {
@@ -66,27 +67,22 @@ export const drawImageFittingWithinParentBounds = ({
     imageData: CanvasImageSource
     withoutClear?: boolean
 }) => {
-    ctx.canvas.width = parentSize.width
-    ctx.canvas.height = parentSize.height
-
     if (!withoutClear)
         // clear prev frame
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
+    let dx = 0,
+        dy = 0,
+        dh = 0,
+        dw = 0
+
     // do nothing since preview smaller than screen size
     if (fileSize.height <= parentSize.height && fileSize.width <= parentSize.width) {
-        // // show preview, with centered formatted image
-        ctx.drawImage(
-            imageData,
-            0,
-            0,
-            fileSize.width,
-            fileSize.height,
-            ctx.canvas.width / 2 - fileSize.width / 2,
-            ctx.canvas.height / 2 - fileSize.height / 2,
-            fileSize.width,
-            fileSize.height
-        )
+        // setup to show preview, with centered formatted image
+        dx = ctx.canvas.width / 2 - fileSize.width / 2
+        dy = ctx.canvas.height / 2 - fileSize.height / 2
+        dw = fileSize.width
+        dh = fileSize.height
     } else {
         let vidAspectRatio: 'square' | 'portrait' | 'landscape' = 'square'
 
@@ -112,17 +108,13 @@ export const drawImageFittingWithinParentBounds = ({
 
                 imgHeight = imgWidth
         }
-
-        ctx.drawImage(
-            imageData,
-            0,
-            0,
-            fileSize.width,
-            fileSize.height,
-            ctx.canvas.width / 2 - imgWidth / 2,
-            ctx.canvas.height / 2 - imgHeight / 2,
-            imgWidth,
-            imgHeight
-        )
+        // setup to show preview, with centered formatted image
+        dx = ctx.canvas.width / 2 - imgWidth / 2
+        dy = ctx.canvas.height / 2 - imgHeight / 2
+        dw = imgWidth
+        dh = imgHeight
     }
+
+    globalMessenger.preview.setPreviewCanvasSize!({ width: dw, height: dh })
+    ctx.drawImage(imageData, 0, 0, fileSize.width, fileSize.height, dx, dy, dw, dh)
 }

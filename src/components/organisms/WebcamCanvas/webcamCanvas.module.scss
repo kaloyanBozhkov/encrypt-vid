@@ -1,15 +1,27 @@
+@import "scss/variables.scss";
+
 .webcamCanvas {
-    canvas {
-        width: 100%;
-        height: 100%;
-        background: black;
+    background: $tertiary;
+    width: 100%;
+    height: 100%;
+    display: flex;
+
+    > div {
         position: absolute;
         top: 0;
         left: 0;
-    }
+        bottom: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
 
-    .videoCanvas {
-        z-index: -1;
+        &.outputCanvas {
+        }
+
+        &.videoCanvas {
+            z-index: -1;
+        }
     }
 
     video {

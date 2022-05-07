@@ -18,6 +18,9 @@ export const renderGroupPixelsAsLetters = ({
     withTextInsteadOfChars?: boolean
     withSpeechInsteadofChars?: boolean
 }) => {
+    // reset curr frame text for copy-pasting it
+    globalMessenger.preview.currentFrameText = ''
+
     const darkCharsetStatic = '.,_-~:'
 
     let chars = `${darkCharsetStatic}${globalMessenger.renderSettings.charsObj.chars}`
@@ -103,7 +106,11 @@ export const renderGroupPixelsAsLetters = ({
                 centerShift_y + rowIdx * groupBy + groupBy / 2,
                 groupBy
             )
+
+            globalMessenger.preview.currentFrameText += cell
         })
+
+        globalMessenger.preview.currentFrameText += '\n'
     })
 }
 

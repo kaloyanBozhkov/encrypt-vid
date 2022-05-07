@@ -36,13 +36,19 @@ const WebcamCanvas = ({ size: { width, height } }: { size: Resolution }) => {
     return (
         <div className={styles.webcamCanvas}>
             <video ref={vidRef} />
-            <canvas
-                className={styles.videoCanvas}
-                ref={videoCanvasRef}
-                width={`${width}px`}
-                height={`${height}px`}
-            />
-            <canvas ref={canvasRef} width={`${width}px`} height={`${height}px`} />
+            <div className={styles.videoCanvas}>
+                <canvas ref={videoCanvasRef} width={`${width}px`} height={`${height}px`} />
+            </div>
+            <div className={styles.outputCanvas}>
+                <canvas
+                    ref={canvasRef}
+                    width={`${width}px`}
+                    height={`${height}px`}
+                    onClick={() => {
+                        globalMessenger.preview.copyCurrentFrameText()
+                    }}
+                />
+            </div>
         </div>
     )
 }
