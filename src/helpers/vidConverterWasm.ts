@@ -47,12 +47,16 @@ const renderLetterFrameForEachImageBuffer = ({
     files,
     groupBy,
     greenMode = false,
-    textMode = false,
+    staticTextMode = false,
+    customCharsMode = false,
+    speechMode = false,
 }: {
     files: ImgAsArrayBufferWithInfo[]
     groupBy: number
     greenMode?: boolean
-    textMode?: boolean
+    staticTextMode?: boolean
+    customCharsMode?: boolean
+    speechMode?: boolean
 }) =>
     new Promise<ImgAsArrayBufferWithInfo[]>((res, rej) => {
         const formattedFramesBuffer: ImgAsArrayBufferWithInfo[] = [],
@@ -72,9 +76,12 @@ const renderLetterFrameForEachImageBuffer = ({
                 runAlgorithm({
                     imageData: image,
                     ctx,
+                    charsObj: globalMessenger.renderSettings.charsObj,
                     groupBy,
                     greenMode,
-                    withTextInsteadOfChars: textMode,
+                    withCustomChars: customCharsMode,
+                    withSpeechInsteadofChars: speechMode,
+                    withStaticText: staticTextMode,
                 })
 
                 // save formatted frame
@@ -93,8 +100,8 @@ const renderLetterFrameForEachImageBuffer = ({
                     fileSize,
                     imageData: ctx.canvas,
                     parentSize: {
-                        width: window.innerWidth,
-                        height: window.innerHeight,
+                        width: document.documentElement.clientWidth,
+                        height: document.documentElement.clientHeight,
                     },
                     ctx: globalMessenger.ctx!,
                 })
@@ -226,8 +233,6 @@ const processInput = async ({
         console.log('Getting frames from MEMFS as Buffer')
 
         const framesBufferArr = await getFramesAsBufferArr(inputName)
-
-        globalMessenger.preview.setPreviewCanvasSize!(framesBufferArr[0].fileSize)
 
         setProcessingMsg(`Formatting frames for "${fileName}"`)
         console.log('Formatting frames')

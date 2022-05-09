@@ -84,12 +84,3 @@ export const animateBlurry = ({
 //     centerShift_x,
 //     centerShift_y
 // )
-
-// animateLetters({
-//   formattedAvg,
-//   groupBy: 30,
-//   centerShift_x,
-//   centerShift_y,
-//   ctx,
-//   stopAt: 5,
-// })

@@ -26,11 +26,10 @@ export const playPreview = (
                         fileSize: globalMessenger.preview.webcamSize!,
                         imageData: vid,
                         parentSize: {
-                            width: window.innerWidth,
-                            height: window.innerHeight,
+                            width: document.documentElement.clientWidth,
+                            height: document.documentElement.clientHeight,
                         },
                         ctx: vidCtx,
-                        withoutClear: false,
                     })
 
                     runAlgorithm({
@@ -41,10 +40,11 @@ export const playPreview = (
                             vidCtx.canvas.width,
                             vidCtx.canvas.height
                         ),
+                        charsObj: globalMessenger.renderSettings.charsObj,
                         groupBy: globalMessenger.renderSettings.groupBy,
                         greenMode: globalMessenger.renderSettings.withJustGreen,
-                        withTextInsteadOfChars:
-                            globalMessenger.renderSettings.withTextInsteadOfChars,
+                        withCustomChars: globalMessenger.renderSettings.withCustomChars,
+                        withStaticText: globalMessenger.renderSettings.withStaticText,
                         withSpeechInsteadofChars:
                             globalMessenger.renderSettings.withSpeechUpdatedText,
                     })
@@ -63,15 +63,6 @@ export const playPreview = (
                         width: vid.videoWidth,
                         height: vid.videoHeight,
                     }
-
-                    const setPreviewCanvasSize = () => {
-                        globalMessenger.preview.setPreviewCanvasSize!({
-                            width: vid.videoWidth,
-                            height: vid.videoHeight,
-                        })
-                    }
-
-                    window.addEventListener('resize', setPreviewCanvasSize)
 
                     // setPreviewCanvasSize()
                     animateWebcamIntoCanvas()

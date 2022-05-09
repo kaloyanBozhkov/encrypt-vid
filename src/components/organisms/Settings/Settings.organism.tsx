@@ -34,11 +34,13 @@ const defaultSliderProps = {
 }
 
 const Settings = ({
+    inactive,
     onHeightChanged,
     onWidthChanged,
     onConfigReady,
     defaultSize,
 }: {
+    inactive: boolean
     onWidthChanged: (n: number) => void
     onHeightChanged: (n: number) => void
     onConfigReady: (config: VidConfig, finishedProcessing: () => void) => void
@@ -48,7 +50,8 @@ const Settings = ({
         [height, setHeight] = useInputState(defaultSize.height),
         [groupBy, setGroupBy] = useInputState(15),
         [matrixMode, setMatrixMode] = useState(false),
-        [textMode, setTextMode] = useState(false),
+        [customCharsMode, setCustomCharsMode] = useState(false),
+        [staticTextMode, setStaticTextMode] = useState(false),
         [speechMode, setSpeechMode] = useState(false),
         [isVisible, setVisible] = useState(window.innerWidth > 900),
         [withCustomLuminance, settWithCustomLuminance] = useState(false),
@@ -79,7 +82,11 @@ const Settings = ({
             ),
             [files]
         ),
-        [customChars, setCustomChars] = useState(globalMessenger.renderSettings.charsObj.text),
+        [customChars, setCustomChars] = useState(
+            globalMessenger.renderSettings.charsObj.customChars
+        ),
+        [staticText, setStaticText] = useState(globalMessenger.renderSettings.charsObj.staticText),
+        [darkChars, setDarkChars] = useState(globalMessenger.renderSettings.charsObj.darkChars),
         [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
         effectNames = useMemo(
             () =>
@@ -87,37 +94,23 @@ const Settings = ({
                     (key) => key[0].toUpperCase() + key.substring(1)
                 ),
             []
+        ),
+        darkCharsInput = useMemo(
+            () => (
+                <Textarea
+                    className={styles.toggledContent}
+                    placeholder="Type the chars to use for darkest colours"
+                    label="Dark chars"
+                    autosize
+                    minRows={1}
+                    value={darkChars}
+                    onChange={({ currentTarget: { value } }) => setDarkChars(value.toUpperCase())}
+                />
+            ),
+            [darkChars]
         )
 
     useResize({ fn: setVisible })
-
-    useEffect(() => {
-        if (!withCustomLuminance) globalMessenger.renderSettings.setCustomLuminance('default')
-
-        setCustomLuminance({
-            r: globalMessenger.renderSettings.luminanceWeights.r * 100,
-            g: globalMessenger.renderSettings.luminanceWeights.g * 100,
-            b: globalMessenger.renderSettings.luminanceWeights.b * 100,
-        })
-    }, [withCustomLuminance])
-
-    useEffect(() => {
-        if (withCustomLuminance)
-            globalMessenger.renderSettings.setCustomLuminance({
-                r: Number((customLuminance.r / 100).toPrecision(3)),
-                g: Number((customLuminance.g / 100).toPrecision(3)),
-                b: Number((customLuminance.b / 100).toPrecision(3)),
-            })
-    }, [customLuminance])
-
-    useEffect(() => {
-        globalMessenger.renderSettings.setActiveAlgorithm(effect)
-    }, [effect])
-
-    // update the chars used for encrypting - ReqAnimFrame will read the charsObj.text
-    useEffect(() => {
-        globalMessenger.renderSettings.charsObj.text = customChars
-    }, [customChars])
 
     // when preview is updated the resolution will change, show the change in settings as well
     useEffect(() => {
@@ -142,13 +135,52 @@ const Settings = ({
     }, [matrixMode])
 
     useEffect(() => {
-        globalMessenger.renderSettings.withTextInsteadOfChars = textMode
-        if (textMode && speechMode) setSpeechMode(false)
-    }, [textMode])
+        globalMessenger.renderSettings.withCustomChars = customCharsMode
+    }, [customCharsMode])
 
     useEffect(() => {
         globalMessenger.renderSettings.withSpeechUpdatedText = speechMode
     }, [speechMode])
+
+    useEffect(() => {
+        globalMessenger.renderSettings.withStaticText = staticTextMode
+    }, [staticTextMode])
+
+    // update the chars used for encrypting - ReqAnimFrame will read the charsObj.customChars
+    useEffect(() => {
+        globalMessenger.renderSettings.charsObj.customChars = customChars
+    }, [customChars])
+
+    useEffect(() => {
+        globalMessenger.renderSettings.charsObj.staticText = staticText
+    }, [staticText])
+
+    useEffect(() => {
+        globalMessenger.renderSettings.charsObj.darkChars = darkChars
+    }, [darkChars])
+
+    useEffect(() => {
+        if (!withCustomLuminance) globalMessenger.renderSettings.setCustomLuminance('default')
+
+        setCustomLuminance({
+            r: globalMessenger.renderSettings.luminanceWeights.r * 100,
+            g: globalMessenger.renderSettings.luminanceWeights.g * 100,
+            b: globalMessenger.renderSettings.luminanceWeights.b * 100,
+        })
+    }, [withCustomLuminance])
+
+    useEffect(() => {
+        if (withCustomLuminance)
+            globalMessenger.renderSettings.setCustomLuminance({
+                r: Number((customLuminance.r / 100).toPrecision(3)),
+                g: Number((customLuminance.g / 100).toPrecision(3)),
+                b: Number((customLuminance.b / 100).toPrecision(3)),
+            })
+    }, [customLuminance])
+
+    useEffect(() => {
+        globalMessenger.renderSettings.setActiveAlgorithm(effect)
+    }, [effect])
 
     return (
         <div className={styles.settings} data-is-visible={isVisible}>
@@ -165,23 +197,9 @@ const Settings = ({
             <div>
                 <p>- Settings -</p>
                 <div>
-                    <InputWrapper label="Width">
-                        <NumberInput
-                            min={1}
-                            type="number"
-                            placeholder="Width"
-                            value={width}
-                            onChange={setWidth}
-                        />
-                    </InputWrapper>
-                    <InputWrapper label="Height">
-                        <NumberInput
-                            min={1}
-                            type="number"
-                            placeholder="eight"
-                            value={height}
-                            onChange={setHeight}
-                        />
+                    <InputWrapper label="Content Size" className={styles.contentSize}>
+                        <p>{`Width: ${width}`} px</p>
+                        <p>{`Height: ${height} px`}</p>
                     </InputWrapper>
                     <InputWrapper label="Group By">
                         <NumberInput
@@ -212,26 +230,61 @@ const Settings = ({
                         />
                         {effect === 'letters' && (
                             <Switch
-                                label="custom static text/chars"
+                                label="custom chars"
                                 size="md"
-                                checked={textMode}
-                                onChange={({ currentTarget: { checked } }) => setTextMode(checked)}
+                                checked={customCharsMode}
+                                onChange={({ currentTarget: { checked } }) => {
+                                    setCustomCharsMode(checked)
+                                    setStaticTextMode(false)
+                                    setSpeechMode(false)
+                                }}
                             />
                         )}
-                        {textMode && effect === 'letters' && (
-                            <Textarea
-                                placeholder="Type what text to use instead of default encoding charset"
-                                label="Static text/chars"
-                                autosize
-                                minRows={2}
-                                value={customChars}
-                                onChange={({ currentTarget: { value } }) =>
-                                    setCustomChars(value.toUpperCase())
-                                }
+                        {customCharsMode && effect === 'letters' && (
+                            <>
+                                <Textarea
+                                    className={styles.toggledContent}
+                                    placeholder="Type what chars to use instead of default encoding charset"
+                                    label="custom chars"
+                                    autosize
+                                    minRows={2}
+                                    value={customChars}
+                                    onChange={({ currentTarget: { value } }) =>
+                                        setCustomChars(value.toUpperCase())
+                                    }
+                                />
+                                {darkCharsInput}
+                            </>
+                        )}
+                        {effect === 'letters' && (
+                            <Switch
+                                label="static text"
+                                size="md"
+                                checked={staticTextMode}
+                                onChange={({ currentTarget: { checked } }) => {
+                                    setStaticTextMode(checked)
+                                    setCustomCharsMode(false)
+                                    setSpeechMode(false)
+                                }}
                             />
                         )}
-                        {!textMode &&
-                            effect === 'letters' &&
+                        {staticTextMode && effect === 'letters' && (
+                            <>
+                                <Textarea
+                                    className={styles.toggledContent}
+                                    placeholder="Type what static text to use instead of default encoding charset"
+                                    label="Static Text"
+                                    autosize
+                                    minRows={2}
+                                    value={staticText}
+                                    onChange={({ currentTarget: { value } }) =>
+                                        setStaticText(value.toUpperCase())
+                                    }
+                                />
+                                {darkCharsInput}
+                            </>
+                        )}
+                        {effect === 'letters' &&
                             Object.prototype.hasOwnProperty.call(
                                 window,
                                 'webkitSpeechRecognition'
@@ -240,9 +293,11 @@ const Settings = ({
                                     label="voice updates text"
                                     size="md"
                                     checked={speechMode}
-                                    onChange={({ currentTarget: { checked } }) =>
+                                    onChange={({ currentTarget: { checked } }) => {
                                         setSpeechMode(checked)
-                                    }
+                                        setStaticTextMode(false)
+                                        setCustomCharsMode(false)
+                                    }}
                                 />
                             )}
                         <Switch
@@ -256,7 +311,10 @@ const Settings = ({
                     </InputWrapper>
                     {withCustomLuminance && (
                         <InputWrapper label="Luminance Weights">
-                            <InputWrapper label={`red: ${customLuminance.r}`}>
+                            <InputWrapper
+                                className={styles.toggledContent}
+                                label={`red: ${customLuminance.r}`}
+                            >
                                 <Slider
                                     {...defaultSliderProps}
                                     label="red"
@@ -269,7 +327,10 @@ const Settings = ({
                                     }
                                 />
                             </InputWrapper>
-                            <InputWrapper label={`green: ${customLuminance.g}`}>
+                            <InputWrapper
+                                className={styles.toggledContent}
+                                label={`green: ${customLuminance.g}`}
+                            >
                                 <Slider
                                     label="green"
                                     {...defaultSliderProps}
@@ -282,7 +343,10 @@ const Settings = ({
                                     }
                                 />
                             </InputWrapper>
-                            <InputWrapper label={`blue: ${customLuminance.b}`}>
+                            <InputWrapper
+                                className={styles.toggledContent}
+                                label={`blue: ${customLuminance.b}`}
+                            >
                                 <Slider
                                     label="blue"
                                     {...defaultSliderProps}
@@ -311,8 +375,9 @@ const Settings = ({
                                 width,
                                 height,
                                 groupBy,
-                                textMode,
                                 speechMode,
+                                customCharsMode,
+                                staticTextMode,
                                 greenMode: matrixMode,
                             }
 
@@ -323,6 +388,11 @@ const Settings = ({
                         Submit <FontAwesomeIcon icon={faPaperPlane} />
                     </Button>
                 </div>
+                {inactive && (
+                    <div className={styles.overlayInactive}>
+                        <p>Processing..</p>
+                    </div>
+                )}
                 <div />
             </div>
         </div>

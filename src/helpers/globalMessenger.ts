@@ -9,6 +9,7 @@ import {
 // context between react components and the js logic ran on each RequestAnimationFrame
 export const globalMessenger: {
     preview: {
+        windowIsResizing: boolean
         webcamSize: Resolution | null
         currentFrameText: string
         readonly clearPreview: (this: typeof globalMessenger.preview) => void
@@ -18,18 +19,21 @@ export const globalMessenger: {
         setPreviewCanvasSize: null | ((size: Resolution) => void)
         readonly setPreviewCanvasSizeSetter: (
             this: typeof globalMessenger['preview'],
-            fn: typeof globalMessenger['preview']['setPreviewCanvasSize']
+            fn: NonNullable<typeof globalMessenger['preview']['setPreviewCanvasSize']>
         ) => void
     }
     renderSettings: {
-        withTextInsteadOfChars: boolean
+        withCustomChars: boolean
+        withStaticText: boolean
         withJustGreen: boolean
         withSpeechUpdatedText: boolean
         groupBy: number
         readonly charsObj: {
-            text: string
-            readonly chars: string
+            darkChars: string
+            customChars: string
+            readonly defaultChars: string
             speech: string
+            staticText: string
         }
         readonly algorithms: {
             letters: typeof renderGroupPixelsAsLetters
@@ -55,13 +59,16 @@ export const globalMessenger: {
     ctx: CanvasRenderingContext2D | null
 } = {
     renderSettings: {
-        withTextInsteadOfChars: false,
+        withCustomChars: false,
+        withStaticText: false,
         withJustGreen: false,
         withSpeechUpdatedText: false,
         groupBy: 15,
         charsObj: {
-            chars: '4!?$P80OKBNMLHGFDASDQWETYU',
-            text: '4!?$P80OKBNMLHGFDASDQWETYU',
+            defaultChars: '4!?$P80OKBNMLHGFDASDQWETYU',
+            customChars: '4!?$P80OKBNMLHGFDASDQWETYU',
+            staticText: 'hello±world±this±is±static±text',
+            darkChars: '.,_-~:',
             speech: 'word',
         },
         algorithms: {
@@ -117,7 +124,24 @@ export const globalMessenger: {
         },
         setPreviewCanvasSize: null,
         setPreviewCanvasSizeSetter(setPreviewCanvasSize) {
-            this.setPreviewCanvasSize = setPreviewCanvasSize
+            // do not proceed if already set once
+            if (this.setPreviewCanvasSize)
+                return console.error(
+                    'tried setting setPreviewCanvasSize twice. React strict mode caught something, or was it a mistake?'
+                )
+
+            let timeoutID: ReturnType<typeof setTimeout> | null = null,
+                lastSize: Resolution = { width: 0, height: 0 }
+
+            // make sure not to run unnecessarily and to stop while resizing
+            this.setPreviewCanvasSize = (size) => {
+                if (size.width === lastSize.width && size.height === lastSize.height) return
+
+                lastSize = size
+
+                if (timeoutID) clearTimeout(timeoutID)
+                timeoutID = setTimeout(() => setPreviewCanvasSize(size), 500)
+            }
         },
         clearPreview() {
             if (!globalMessenger.ctx || !this.webcamSize)
@@ -133,6 +157,9 @@ export const globalMessenger: {
             globalMessenger.ctx!.canvas.width = this.webcamSize!.width
             globalMessenger.ctx!.canvas.height = this.webcamSize!.height
         },
+        windowIsResizing: false,
     },
     ctx: null,
 }
+
+console.log(globalMessenger)

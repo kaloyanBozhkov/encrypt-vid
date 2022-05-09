@@ -1,3 +1,5 @@
+@import "scss/variables.scss";
+
 @font-face {
     font-family: "Matrix";
     src: url("../../public/assets/matrix.ttf");
@@ -5,6 +7,7 @@
 
 html {
     font-size: 16px;
+    background: $tertiary;
 }
 
 * {

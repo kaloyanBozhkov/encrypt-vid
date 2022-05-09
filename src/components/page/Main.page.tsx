@@ -24,36 +24,40 @@ const MainPage = () => {
             height: defaultSize.height,
         }),
         [processingMsg, setProcessingMsg] = useState<string | 'Done!'>(''),
+        [isProcessing, setIsProcessing] = useState(false),
         [step, setStep] = useState(0),
         SettingsMemoized = useMemo(
             () => (
                 <Settings
+                    inactive={isProcessing}
                     defaultSize={size}
                     onHeightChanged={(height) => setSize((prev) => ({ ...prev, height }))}
                     onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
                     onConfigReady={(config, finishedProcessing) => {
+                        setIsProcessing(true)
                         processFilesWithConfig(config, {
                             setProcessingMsg,
                             finishedProcessing: () => {
                                 finishedProcessing()
                                 setProcessingMsg('Done!')
+                                setIsProcessing(false)
                             },
                         })
                     }}
                 />
             ),
-            [size]
+            [size, isProcessing]
         ),
         WebacmCanvasMemoized = useMemo(() => <WebcamCanvas size={size} />, [size])
 
     useEffect(() => {
-        globalMessenger.preview.setPreviewCanvasSizeSetter((newSize) => {
+        globalMessenger.preview.setPreviewCanvasSizeSetter((newSize) =>
             setSize((prevSize) =>
                 prevSize.width !== newSize.width || prevSize.height !== newSize.height
                     ? newSize
                     : prevSize
             )
-        })
+        )
     }, [])
 
     useEffect(() => {

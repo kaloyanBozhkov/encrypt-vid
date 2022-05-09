@@ -3,7 +3,8 @@ export type VidConfig = {
     height: number
     groupBy: number
     greenMode: boolean
-    textMode: boolean
+    staticTextMode: boolean
+    customCharsMode: boolean
     speechMode: boolean
     files: File[]
 }

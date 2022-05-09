@@ -1,6 +1,5 @@
 import { getFormattedAvg } from './canvas'
 import { globalMessenger } from './globalMessenger'
-import { renderGroupPixelsAsLetters } from './renderers'
 
 export const calculateLuminance = ({ r, g, b }: PixelInfo) =>
     globalMessenger.renderSettings.luminanceWeights.r * r +
@@ -16,15 +15,19 @@ export const runAlgorithm = ({
     image,
     groupBy,
     greenMode,
-    withTextInsteadOfChars = false,
+    charsObj,
+    withCustomChars = false,
+    withStaticText = false,
     withSpeechInsteadofChars = false,
 }: {
     ctx: CanvasRenderingContext2D
     imageData?: ImageData
     image?: CanvasImageSource
+    charsObj: typeof globalMessenger.renderSettings.charsObj
     groupBy: number
     greenMode: boolean
-    withTextInsteadOfChars?: boolean
+    withCustomChars?: boolean
+    withStaticText?: boolean
     withSpeechInsteadofChars?: boolean
 }) => {
     const formattedAvg = getFormattedAvg({
@@ -36,8 +39,10 @@ export const runAlgorithm = ({
 
     globalMessenger.renderSettings.activeAlgorithm({
         formattedAvg,
+        charsObj,
         groupBy,
-        withTextInsteadOfChars,
+        withCustomChars,
+        withStaticText,
         withSpeechInsteadofChars,
         centerShift_x: 0,
         centerShift_y: 0,
@@ -187,44 +192,4 @@ export const getPixelData = (img: HTMLImageElement, ctx: CanvasRenderingContext2
         centerShift_x,
         centerShift_y,
     }
-}
-
-export const animateLetters = ({
-    formattedAvg,
-    groupBy,
-    stopAt,
-    centerShift_x,
-    centerShift_y,
-    ctx,
-}: {
-    formattedAvg: PixelInfo[][]
-    // n of pixels summed nto 1 big pixel
-    groupBy: number
-    // stop at what groupBy?
-    stopAt: number
-    centerShift_x: number
-    centerShift_y: number
-    ctx: CanvasRenderingContext2D
-}) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-
-    renderGroupPixelsAsLetters({
-        formattedAvg,
-        groupBy,
-        centerShift_x,
-        centerShift_y,
-        ctx,
-    })
-
-    if (groupBy > stopAt)
-        setTimeout(() => {
-            animateLetters({
-                formattedAvg,
-                groupBy: groupBy - 1,
-                stopAt,
-                centerShift_x,
-                centerShift_y,
-                ctx,
-            })
-        }, 25)
 }

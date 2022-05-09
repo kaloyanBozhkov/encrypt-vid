@@ -7,7 +7,9 @@ export const renderGroupPixelsAsLetters = ({
     centerShift_x,
     centerShift_y,
     ctx,
-    withTextInsteadOfChars = false,
+    charsObj,
+    withCustomChars = false,
+    withStaticText = false,
     withSpeechInsteadofChars = false,
 }: {
     formattedAvg: PixelInfo[][]
@@ -15,15 +17,17 @@ export const renderGroupPixelsAsLetters = ({
     centerShift_x: number
     centerShift_y: number
     ctx: CanvasRenderingContext2D
-    withTextInsteadOfChars?: boolean
+    charsObj: typeof globalMessenger.renderSettings.charsObj
+    withCustomChars?: boolean
+    withStaticText?: boolean
     withSpeechInsteadofChars?: boolean
 }) => {
     // reset curr frame text for copy-pasting it
     globalMessenger.preview.currentFrameText = ''
 
-    const darkCharsetStatic = '.,_-~:'
+    const { darkChars: darkCharsetStatic, defaultChars } = charsObj
 
-    let chars = `${darkCharsetStatic}${globalMessenger.renderSettings.charsObj.chars}`
+    let chars = `${darkCharsetStatic}${defaultChars}`
 
     const getKey = (luminance: number, chars: string) => (luminance * chars.length) / 255
 
@@ -42,27 +46,46 @@ export const renderGroupPixelsAsLetters = ({
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
                 ctx.fillText(
-                    globalMessenger.renderSettings.charsObj.speech[charCounter],
+                    charsObj.speech[charCounter],
                     centerShift_x + cellIdx * groupBy + groupBy / 2,
                     centerShift_y + rowIdx * groupBy + groupBy / 2,
                     groupBy
                 )
 
                 if (key >= darkCharsetStatic.length)
-                    charCounter =
-                        charCounter + 1 === globalMessenger.renderSettings.charsObj.speech.length
-                            ? 0
-                            : charCounter + 1
+                    charCounter = charCounter + 1 === charsObj.speech.length ? 0 : charCounter + 1
             })
         })
 
         return
     }
 
-    if (withTextInsteadOfChars) {
+    if (withCustomChars) {
+        chars = `${darkCharsetStatic}${charsObj.customChars}`
+
+        formattedAvg.forEach((row, rowIdx) => {
+            row.forEach(({ r, g, b, a }, cellIdx) => {
+                const aToScale0To1 = (a * 100) / 255 / 100,
+                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
+
+                ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
+
+                ctx.fillText(
+                    chars[key] || chars[chars.length - 1],
+                    centerShift_x + cellIdx * groupBy + groupBy / 2,
+                    centerShift_y + rowIdx * groupBy + groupBy / 2,
+                    groupBy
+                )
+            })
+        })
+
+        return
+    }
+
+    if (withStaticText) {
         let charCounter = 0
 
-        chars = `${darkCharsetStatic}${globalMessenger.renderSettings.charsObj.text}`
+        chars = `${darkCharsetStatic}${charsObj.staticText}`
 
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
@@ -80,9 +103,7 @@ export const renderGroupPixelsAsLetters = ({
 
                 if (key >= darkCharsetStatic.length)
                     charCounter =
-                        charCounter + 1 === globalMessenger.renderSettings.charsObj.text.length
-                            ? 0
-                            : charCounter + 1
+                        charCounter + 1 === charsObj.staticText.length ? 0 : charCounter + 1
             })
         })
 
