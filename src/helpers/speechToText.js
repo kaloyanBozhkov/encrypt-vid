@@ -1,8 +1,6 @@
-const globalMessengerModules = require('./globalMessenger.ts')
-
 let isOn = false
 
-const speechToText = () => {
+const speechToText = (renderSettings) => {
     if (!isOn) {
         let final_transcript = ''
 
@@ -27,10 +25,11 @@ const speechToText = () => {
                 if (event.results[i].isFinal) final_transcript += event.results[i][0].transcript
 
             if (final_transcript)
-                globalMessengerModules.globalMessenger.renderSettings.charsObj.speech =
-                    final_transcript.replaceAll(/[ ]/g, '±').toUpperCase()
+                renderSettings.charsObj.speech = final_transcript
+                    .replaceAll(/[ ]/g, '±')
+                    .toUpperCase()
 
-            console.log(globalMessengerModules.globalMessenger.renderSettings.charsObj.speech)
+            console.log(renderSettings.charsObj.speech)
         }
 
         recognition.onerror = (event) => {

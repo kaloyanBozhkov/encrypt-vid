@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import { RenderSettings, renderSettingsContext } from 'context/renderSettings/renderSettings.contex'
 import useResize from 'hooks/useResize/useResize'
-import { Resolution, VidConfig } from 'types/common'
 
 import Dropzone from 'components/organisms/Dropzone/Dropzone.organism'
+
+import type { WebcamSizeState } from 'components/page/Main.page'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -19,8 +21,6 @@ import {
 import { MIME_TYPES } from '@mantine/dropzone'
 import { useInputState } from '@mantine/hooks'
 
-import { globalMessenger } from 'helpers/globalMessenger'
-
 import styles from './settings.module.scss'
 
 const defaultSliderProps = {
@@ -33,21 +33,20 @@ const defaultSliderProps = {
     precision: 5,
 }
 
-const Settings = ({
+const renderSettings = ({
     inactive,
-    onHeightChanged,
-    onWidthChanged,
     onConfigReady,
-    defaultSize,
+    webcamSize,
 }: {
     inactive: boolean
-    onWidthChanged: (n: number) => void
-    onHeightChanged: (n: number) => void
-    onConfigReady: (config: VidConfig, finishedProcessing: () => void) => void
-    defaultSize: Resolution
+    onConfigReady: (
+        files: File[],
+        renderSettings: RenderSettings,
+        finishedProcessing: () => void
+    ) => void
+    webcamSize: WebcamSizeState
 }) => {
-    const [width, setWidth] = useInputState(defaultSize.width),
-        [height, setHeight] = useInputState(defaultSize.height),
+    const renderSettings = useContext(renderSettingsContext),
         [groupBy, setGroupBy] = useInputState(15),
         [matrixMode, setMatrixMode] = useState(false),
         [customCharsMode, setCustomCharsMode] = useState(false),
@@ -82,15 +81,13 @@ const Settings = ({
             ),
             [files]
         ),
-        [customChars, setCustomChars] = useState(
-            globalMessenger.renderSettings.charsObj.customChars
-        ),
-        [staticText, setStaticText] = useState(globalMessenger.renderSettings.charsObj.staticText),
-        [darkChars, setDarkChars] = useState(globalMessenger.renderSettings.charsObj.darkChars),
+        [customChars, setCustomChars] = useState(renderSettings.charsObj.customChars),
+        [staticText, setStaticText] = useState(renderSettings.charsObj.staticText),
+        [darkChars, setDarkChars] = useState(renderSettings.charsObj.darkChars),
         [effect, setEffect] = useState<'letters' | 'tiles' | 'blurry'>('letters'),
         effectNames = useMemo(
             () =>
-                Object.keys(globalMessenger.renderSettings.algorithms).map(
+                Object.keys(renderSettings.algorithms).map(
                     (key) => key[0].toUpperCase() + key.substring(1)
                 ),
             []
@@ -112,66 +109,52 @@ const Settings = ({
 
     useResize({ fn: setVisible })
 
-    // when preview is updated the resolution will change, show the change in settings as well
     useEffect(() => {
-        setWidth(defaultSize.width)
-        setHeight(defaultSize.height)
-    }, [defaultSize.width, defaultSize.height])
-
-    useEffect(() => {
-        onWidthChanged(width)
-    }, [width])
-
-    useEffect(() => {
-        onHeightChanged(height)
-    }, [height])
-
-    useEffect(() => {
-        globalMessenger.renderSettings.groupBy = groupBy
+        renderSettings.groupBy = groupBy
     }, [groupBy])
 
     useEffect(() => {
-        globalMessenger.renderSettings.withJustGreen = matrixMode
+        renderSettings.withJustGreen = matrixMode
     }, [matrixMode])
 
     useEffect(() => {
-        globalMessenger.renderSettings.withCustomChars = customCharsMode
+        renderSettings.withCustomChars = customCharsMode
     }, [customCharsMode])
 
     useEffect(() => {
-        globalMessenger.renderSettings.withSpeechUpdatedText = speechMode
+        renderSettings.withSpeechUpdatedText = speechMode
     }, [speechMode])
 
     useEffect(() => {
-        globalMessenger.renderSettings.withStaticText = staticTextMode
+        renderSettings.withStaticText = staticTextMode
     }, [staticTextMode])
 
     // update the chars used for encrypting - ReqAnimFrame will read the charsObj.customChars
     useEffect(() => {
-        globalMessenger.renderSettings.charsObj.customChars = customChars
+        renderSettings.charsObj.customChars = customChars
     }, [customChars])
 
     useEffect(() => {
-        globalMessenger.renderSettings.charsObj.staticText = staticText
+        renderSettings.charsObj.staticText = staticText
     }, [staticText])
 
     useEffect(() => {
-        globalMessenger.renderSettings.charsObj.darkChars = darkChars
+        renderSettings.charsObj.darkChars = darkChars
     }, [darkChars])
 
     useEffect(() => {
-        if (!withCustomLuminance) globalMessenger.renderSettings.setCustomLuminance('default')
+        if (!withCustomLuminance) renderSettings.setCustomLuminance('default')
 
         setCustomLuminance({
-            r: globalMessenger.renderSettings.luminanceWeights.r * 100,
-            g: globalMessenger.renderSettings.luminanceWeights.g * 100,
-            b: globalMessenger.renderSettings.luminanceWeights.b * 100,
+            r: renderSettings.luminanceWeights.r * 100,
+            g: renderSettings.luminanceWeights.g * 100,
+            b: renderSettings.luminanceWeights.b * 100,
         })
     }, [withCustomLuminance])
 
     useEffect(() => {
         if (withCustomLuminance)
-            globalMessenger.renderSettings.setCustomLuminance({
+            renderSettings.setCustomLuminance({
                 r: Number((customLuminance.r / 100).toPrecision(3)),
                 g: Number((customLuminance.g / 100).toPrecision(3)),
                 b: Number((customLuminance.b / 100).toPrecision(3)),
@@ -179,11 +162,11 @@ const Settings = ({
     }, [customLuminance])
 
     useEffect(() => {
-        globalMessenger.renderSettings.setActiveAlgorithm(effect)
+        renderSettings.setActiveAlgorithm(effect)
     }, [effect])
 
     return (
-        <div className={styles.settings} data-is-visible={isVisible}>
+        <div className={styles.settings} data-is-visible={isVisible && !inactive}>
             <Button
                 variant="subtle"
                 color="dark"
@@ -192,14 +175,29 @@ const Settings = ({
                 uppercase
                 onClick={() => setVisible((p) => !p)}
             >
-                {isVisible ? 'Hide' : 'Show Settings'}
+                {isVisible ? 'Hide' : 'Show renderSettings'}
             </Button>
             <div>
                 <p>- Settings -</p>
                 <div>
-                    <InputWrapper label="Content Size" className={styles.contentSize}>
-                        <p>{`Width: ${width}`} px</p>
-                        <p>{`Height: ${height} px`}</p>
+                    <InputWrapper
+                        label={
+                            webcamSize !== 'denied'
+                                ? 'Webcam Preview Size'
+                                : 'No webcam to preview config with :('
+                        }
+                        className={styles.contentSize}
+                    >
+                        {webcamSize !== 'denied' ? (
+                            webcamSize === 'loading' ? (
+                                <p>Loading..</p>
+                            ) : (
+                                <>
+                                    <p>{`Width: ${webcamSize.width}`} px</p>
+                                    <p>{`Height: ${webcamSize.height} px`}</p>
+                                </>
+                            )
+                        ) : null}
                     </InputWrapper>
                     <InputWrapper label="Group By">
                         <NumberInput
@@ -369,20 +367,7 @@ const Settings = ({
                         compact
                         uppercase
                         className={styles.submitBtn}
-                        onClick={() => {
-                            const config = {
-                                files,
-                                width,
-                                height,
-                                groupBy,
-                                speechMode,
-                                customCharsMode,
-                                staticTextMode,
-                                greenMode: matrixMode,
-                            }
-
-                            onConfigReady(config, () => setFiles([]))
-                        }}
+                        onClick={() => onConfigReady(files, renderSettings, () => setFiles([]))}
                         disabled={!files.length}
                     >
                         Submit <FontAwesomeIcon icon={faPaperPlane} />
@@ -399,4 +384,4 @@ const Settings = ({
     )
 }
 
-export default Settings
+export default renderSettings

@@ -1,10 +1,11 @@
+import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
+import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
 import { getPixels, savePixels } from 'ndarray-pixels'
-import { Resolution, VidConfig } from 'types/common'
+import type { Resolution } from 'types/common'
 
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
 
 import { drawImageFittingWithinParentBounds } from './canvas'
-import { globalMessenger } from './globalMessenger'
 import { runAlgorithm } from './helpers'
 
 const worker = createFFmpeg({
@@ -45,18 +46,12 @@ const downloadBlob = ({ fileName, url }: { fileName: string; url: string }) => {
 
 const renderLetterFrameForEachImageBuffer = ({
     files,
-    groupBy,
-    greenMode = false,
-    staticTextMode = false,
-    customCharsMode = false,
-    speechMode = false,
+    renderSettings,
+    previewSettings,
 }: {
     files: ImgAsArrayBufferWithInfo[]
-    groupBy: number
-    greenMode?: boolean
-    staticTextMode?: boolean
-    customCharsMode?: boolean
-    speechMode?: boolean
+    renderSettings: RenderSettings
+    previewSettings: PreviewSettings
 }) =>
     new Promise<ImgAsArrayBufferWithInfo[]>((res, rej) => {
         const formattedFramesBuffer: ImgAsArrayBufferWithInfo[] = [],
@@ -67,21 +62,22 @@ const renderLetterFrameForEachImageBuffer = ({
         if (!ctx) throw Error('There was an issue setting context for canvas')
 
         const operations = files.map(({ fileName, fileContents, fileSize }) => async () => {
-                canvas.width = fileSize.width
-                canvas.height = fileSize.height
+                if (canvas.width !== fileSize.width || canvas.height !== fileSize.height) {
+                    canvas.width = fileSize.width
+                    canvas.height = fileSize.height
+                }
 
                 const ui8ca = new Uint8ClampedArray(fileContents),
                     image = new ImageData(ui8ca, fileSize.width, fileSize.height)
 
                 runAlgorithm({
+                    renderSettings,
+                    previewSettings: {
+                        ...previewSettings,
+                        // use the converter ctx instead of the preview one
+                        ctx,
+                    },
                     imageData: image,
-                    ctx,
-                    charsObj: globalMessenger.renderSettings.charsObj,
-                    groupBy,
-                    greenMode,
-                    withCustomChars: customCharsMode,
-                    withSpeechInsteadofChars: speechMode,
-                    withStaticText: staticTextMode,
                 })
 
                 // save formatted frame
@@ -96,6 +92,7 @@ const renderLetterFrameForEachImageBuffer = ({
                     fileContents: imageDataAsUInt8Array,
                 })
 
+                // preview the formatted frame
                 drawImageFittingWithinParentBounds({
                     fileSize,
                     imageData: ctx.canvas,
@@ -103,7 +100,7 @@ const renderLetterFrameForEachImageBuffer = ({
                         width: document.documentElement.clientWidth,
                         height: document.documentElement.clientHeight,
                     },
-                    ctx: globalMessenger.ctx!,
+                    ctx: previewSettings.ctx!,
                 })
             }),
             executor = async () => {
@@ -207,17 +204,19 @@ const writeFormattedFileToMEMFS = (files: ImgAsArrayBufferWithInfo[]) => {
 }
 
 const processInput = async ({
-    config,
     /* inputNmae: name of file on MEMFS */
     fileInfo: { inputName, type },
     /* name of file on PC */
     fileName,
     setProcessingMsg,
+    renderSettings,
+    previewSettings,
 }: {
-    config: VidConfig
     fileInfo: FileInfo
     fileName: string
     setProcessingMsg: (msg: string) => void
+    renderSettings: RenderSettings
+    previewSettings: PreviewSettings
 }) => {
     const extension = inputName.split('.')[1]
 
@@ -238,8 +237,9 @@ const processInput = async ({
         console.log('Formatting frames')
 
         const formattedFramesBufferArr = await renderLetterFrameForEachImageBuffer({
-                ...config,
                 files: framesBufferArr,
+                previewSettings,
+                renderSettings,
             }),
             framesCount = formattedFramesBufferArr.length
 
@@ -310,37 +310,50 @@ const processInput = async ({
         console.log('Formatting image', imgBuffer)
 
         const [{ fileContents }] = await renderLetterFrameForEachImageBuffer({
-            ...config,
+            renderSettings,
+            previewSettings,
             files: [imgBuffer],
         })
 
         // eslint-disable-next-line
         url = window.URL.createObjectURL(new Blob([fileContents], { type }))
+
+        setProcessingMsg('Preview time!')
+
+        // let the preview show for a little
+        await new Promise((res) => setTimeout(res, 1000))
     }
 
     setProcessingMsg(`Saving output from "${fileName}"`)
 
     downloadBlob({ url, fileName })
-
-    globalMessenger.preview.clearPreview()
-    setProcessingMsg('')
     if (outputFileName) filesToClean.push(outputFileName)
+
+    // eslint-disable-next-line
+    window.URL.revokeObjectURL(url)
+
+    // clear render preview
+    previewSettings.ctx!.clearRect(
+        0,
+        0,
+        previewSettings.ctx!.canvas.width,
+        previewSettings.ctx!.canvas.height
+    )
 }
 
 type FileInfo = { inputName: string; type: string }
 
-export const processFilesWithConfig = async (
-    config: VidConfig,
-    {
-        setProcessingMsg,
-        finishedProcessing,
-    }: {
-        setProcessingMsg: (msg: string) => void
-        finishedProcessing: () => void
-    }
-) => {
-    globalMessenger.preview.stopLiveRendering!()
-
+export const processFilesWithConfig = async ({
+    files,
+    setProcessingMsg,
+    renderSettings,
+    previewSettings,
+}: {
+    files: File[]
+    setProcessingMsg: (msg: string) => void
+    renderSettings: RenderSettings
+    previewSettings: PreviewSettings
+}) => {
     setProcessingMsg('Loading worker')
 
     if (!worker.isLoaded()) await worker.load()
@@ -351,21 +364,20 @@ export const processFilesWithConfig = async (
 
     console.log('Writing input files to MEMFS')
 
-    await copyInputFilesIntoMEMFS(config.files, fileNameToMEMFSFileName)
+    await copyInputFilesIntoMEMFS(files, fileNameToMEMFSFileName)
 
     console.log('Finished writing input files to MEMFS')
 
     // process inputs
     for (const [fileName, fileInfo] of fileNameToMEMFSFileName)
-        await processInput({ config, fileInfo, fileName, setProcessingMsg })
+        await processInput({
+            fileInfo,
+            fileName,
+            setProcessingMsg,
+            renderSettings,
+            previewSettings,
+        })
 
-    // delete all temporary files on HDD
     setProcessingMsg('Cleaning temporary files')
     cleanWorkingFiles()
-
-    // resume webcam preview
-    globalMessenger.preview.startLiveRendering!()
-
-    // reset dropzone
-    finishedProcessing()
 }

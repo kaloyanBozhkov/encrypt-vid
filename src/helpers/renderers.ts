@@ -1,31 +1,34 @@
-import { globalMessenger } from './globalMessenger'
+import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
+import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
+
 import { PixelInfo, calculateLuminance, formattedBlockOfPixelsToImage } from './helpers'
 
 export const renderGroupPixelsAsLetters = ({
     formattedAvg,
-    groupBy,
     centerShift_x,
     centerShift_y,
-    ctx,
-    charsObj,
-    withCustomChars = false,
-    withStaticText = false,
-    withSpeechInsteadofChars = false,
+    previewSettings,
+    renderSettings,
 }: {
     formattedAvg: PixelInfo[][]
-    groupBy: number
     centerShift_x: number
     centerShift_y: number
-    ctx: CanvasRenderingContext2D
-    charsObj: typeof globalMessenger.renderSettings.charsObj
-    withCustomChars?: boolean
-    withStaticText?: boolean
-    withSpeechInsteadofChars?: boolean
+    previewSettings: PreviewSettings
+    renderSettings: RenderSettings
 }) => {
     // reset curr frame text for copy-pasting it
-    globalMessenger.preview.currentFrameText = ''
+    previewSettings.currentFrameText = ''
 
-    const { darkChars: darkCharsetStatic, defaultChars } = charsObj
+    const ctx = previewSettings.ctx!,
+        {
+            luminanceWeights,
+            groupBy,
+            charsObj,
+            withCustomChars = false,
+            withStaticText = false,
+            withSpeechUpdatedText = false,
+        } = renderSettings,
+        { darkChars: darkCharsetStatic, defaultChars } = charsObj
 
     let chars = `${darkCharsetStatic}${defaultChars}`
 
@@ -35,13 +38,18 @@ export const renderGroupPixelsAsLetters = ({
     ctx.textBaseline = 'middle'
     ctx.textAlign = 'center'
 
-    if (withSpeechInsteadofChars) {
+    if (withSpeechUpdatedText) {
         let charCounter = 0
 
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
                 const aToScale0To1 = (a * 100) / 255 / 100,
-                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
+                    key = Math.floor(
+                        getKey(
+                            calculateLuminance({ r, g, b } as PixelInfo, luminanceWeights),
+                            chars
+                        )
+                    )
 
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
@@ -66,7 +74,12 @@ export const renderGroupPixelsAsLetters = ({
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
                 const aToScale0To1 = (a * 100) / 255 / 100,
-                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
+                    key = Math.floor(
+                        getKey(
+                            calculateLuminance({ r, g, b } as PixelInfo, luminanceWeights),
+                            chars
+                        )
+                    )
 
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
@@ -90,7 +103,12 @@ export const renderGroupPixelsAsLetters = ({
         formattedAvg.forEach((row, rowIdx) => {
             row.forEach(({ r, g, b, a }, cellIdx) => {
                 const aToScale0To1 = (a * 100) / 255 / 100,
-                    key = Math.floor(getKey(calculateLuminance({ r, g, b } as PixelInfo), chars))
+                    key = Math.floor(
+                        getKey(
+                            calculateLuminance({ r, g, b } as PixelInfo, luminanceWeights),
+                            chars
+                        )
+                    )
 
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
@@ -112,7 +130,8 @@ export const renderGroupPixelsAsLetters = ({
 
     // default
     const curry = (cell: PixelInfo) =>
-            chars[Math.floor(getKey(calculateLuminance(cell), chars))] || chars[chars.length - 1],
+            chars[Math.floor(getKey(calculateLuminance(cell, luminanceWeights), chars))] ||
+            chars[chars.length - 1],
         letterImageInfo = formattedAvg.map((row) => row.map(curry))
 
     letterImageInfo.forEach((row, rowIdx) => {
@@ -128,32 +147,32 @@ export const renderGroupPixelsAsLetters = ({
                 groupBy
             )
 
-            globalMessenger.preview.currentFrameText += cell
+            previewSettings.currentFrameText += cell
         })
 
-        globalMessenger.preview.currentFrameText += '\n'
+        previewSettings.currentFrameText += '\n'
     })
 }
 
 export const renderGroupPixelsAsSquares = ({
     formattedAvg,
-    groupBy,
     centerShift_x,
     centerShift_y,
-    ctx,
+    previewSettings: { ctx: ctxN },
+    renderSettings: { groupBy, luminanceWeights },
 }: {
     formattedAvg: PixelInfo[][]
-    groupBy: number
+    renderSettings: RenderSettings
+    previewSettings: PreviewSettings
     centerShift_x: number
     centerShift_y: number
-    ctx: CanvasRenderingContext2D
 }) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    const ctx = ctxN!
 
     formattedAvg.forEach((row, rowIdx) =>
-        row.forEach((cell, cellIdx) => {
+        row.forEach((_cell, cellIdx) => {
             const pixelInfo = formattedAvg[rowIdx][cellIdx],
-                size = (calculateLuminance(pixelInfo) * groupBy) / 100
+                size = (calculateLuminance(pixelInfo, luminanceWeights) * groupBy) / 100
 
             ctx.fillStyle = `rgba(${pixelInfo.r},${pixelInfo.g},${pixelInfo.b},${pixelInfo.a})`
             ctx.fillRect(
@@ -168,18 +187,18 @@ export const renderGroupPixelsAsSquares = ({
 
 export const renderBlurryPixels = ({
     formattedAvg,
-    groupBy,
+    renderSettings: { groupBy },
+    previewSettings: { ctx: ctxN },
     centerShift_x,
     centerShift_y,
-    ctx,
 }: {
     formattedAvg: PixelInfo[][]
-    groupBy: number
     centerShift_x: number
     centerShift_y: number
-    ctx: CanvasRenderingContext2D
+    previewSettings: PreviewSettings
+    renderSettings: RenderSettings
 }) => {
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+    const ctx = ctxN!
 
     ctx.putImageData(
         formattedBlockOfPixelsToImage(formattedAvg, groupBy, ctx),

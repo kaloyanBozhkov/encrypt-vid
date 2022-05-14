@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useState } from 'react'
 
+import { previewSettingsContext } from 'context/previewSettings/previewSettings.contex'
 import type { Resolution } from 'types/common'
 
 import OperationStatus from 'components/molecules/OperationStatus/OperationStatus.molecule'
@@ -9,56 +10,53 @@ import WebcamCanvas from 'components/organisms/WebcamCanvas/WebcamCanvas.organis
 
 import MainLayout from 'components/layouts/MainLayout/Main.layout'
 
-import { globalMessenger } from 'helpers/globalMessenger'
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
 
-// used initially untill webcam usage approved & set size based on media device capability
-export const defaultSize = {
-    width: 1280,
-    height: 720,
-}
+export type WebcamSizeState = Resolution | 'loading' | 'denied'
 
 const MainPage = () => {
-    const [size, setSize] = useState<Resolution>({
-            width: defaultSize.width,
-            height: defaultSize.height,
-        }),
-        [processingMsg, setProcessingMsg] = useState<string | 'Done!'>(''),
+    const previewSettings = useContext(previewSettingsContext),
+        [webcamSize, setWebcamSize] = useState<WebcamSizeState>('loading'),
+        [processingMsg, setProcessingMsg] = useState<string | 'Done!'>('opa'),
         [isProcessing, setIsProcessing] = useState(false),
         [step, setStep] = useState(0),
         SettingsMemoized = useMemo(
             () => (
                 <Settings
                     inactive={isProcessing}
-                    defaultSize={size}
-                    onHeightChanged={(height) => setSize((prev) => ({ ...prev, height }))}
-                    onWidthChanged={(width) => setSize((prev) => ({ ...prev, width }))}
-                    onConfigReady={(config, finishedProcessing) => {
+                    webcamSize={webcamSize}
+                    onConfigReady={async (files, renderSettings, finishedProcessing) => {
                         setIsProcessing(true)
-                        processFilesWithConfig(config, {
+
+                        // stop webcam preview
+                        previewSettings.stopLiveRendering!()
+
+                        await processFilesWithConfig({
+                            files,
                             setProcessingMsg,
-                            finishedProcessing: () => {
-                                finishedProcessing()
-                                setProcessingMsg('Done!')
-                                setIsProcessing(false)
-                            },
+                            renderSettings,
+                            previewSettings,
                         })
+
+                        // resume webcam preview
+                        previewSettings.startLiveRendering!()
+
+                        setProcessingMsg('Done!')
+                        setIsProcessing(false)
+
+                        // reset dropzone
+                        finishedProcessing()
                     }}
                 />
             ),
-            [size, isProcessing]
+            [webcamSize, isProcessing]
         ),
-        WebacmCanvasMemoized = useMemo(() => <WebcamCanvas size={size} />, [size])
+        WebacmCanvasMemoized = useMemo(() => <WebcamCanvas />, [])
 
+    // once preview plays we have media stream and can determine webcam resolution
     useEffect(() => {
-        globalMessenger.preview.setPreviewCanvasSizeSetter((newSize) =>
-            setSize((prevSize) =>
-                prevSize.width !== newSize.width || prevSize.height !== newSize.height
-                    ? newSize
-                    : prevSize
-            )
-        )
-    }, [])
+        previewSettings.setWebcamSize = setWebcamSize
+    })
 
     useEffect(() => {
         let intervalId: ReturnType<typeof setInterval> | undefined = undefined

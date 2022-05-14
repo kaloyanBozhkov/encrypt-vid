@@ -1,52 +1,42 @@
-import { getFormattedAvg } from './canvas'
-import { globalMessenger } from './globalMessenger'
+import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
+import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
 
-export const calculateLuminance = ({ r, g, b }: PixelInfo) =>
-    globalMessenger.renderSettings.luminanceWeights.r * r +
-    globalMessenger.renderSettings.luminanceWeights.g * g +
-    globalMessenger.renderSettings.luminanceWeights.b * b
+import { getFormattedAvg } from './canvas'
+
+export const calculateLuminance = (
+    { r, g, b }: PixelInfo,
+    luminanceWeights: RenderSettings['luminanceWeights']
+) => luminanceWeights.r * r + luminanceWeights.g * g + luminanceWeights.b * b
 
 /**
  * Runs the active algorithm passes it formattedAvg pixel matrix
  */
 export const runAlgorithm = ({
-    ctx,
     imageData,
     image,
-    groupBy,
-    greenMode,
-    charsObj,
-    withCustomChars = false,
-    withStaticText = false,
-    withSpeechInsteadofChars = false,
+    renderSettings,
+    previewSettings,
 }: {
-    ctx: CanvasRenderingContext2D
     imageData?: ImageData
     image?: CanvasImageSource
-    charsObj: typeof globalMessenger.renderSettings.charsObj
-    groupBy: number
-    greenMode: boolean
-    withCustomChars?: boolean
-    withStaticText?: boolean
-    withSpeechInsteadofChars?: boolean
+    renderSettings: RenderSettings
+    previewSettings: PreviewSettings
 }) => {
+    const { groupBy, withJustGreen: greenMode } = renderSettings
+
     const formattedAvg = getFormattedAvg({
-        ctx,
+        ctx: previewSettings.ctx!,
         ...(image ? { image } : { imageData }),
         groupBy,
         greenMode,
     })
 
-    globalMessenger.renderSettings.activeAlgorithm({
+    renderSettings.activeAlgorithm({
         formattedAvg,
-        charsObj,
-        groupBy,
-        withCustomChars,
-        withStaticText,
-        withSpeechInsteadofChars,
+        renderSettings,
+        previewSettings,
         centerShift_x: 0,
         centerShift_y: 0,
-        ctx,
     })
 }
 
