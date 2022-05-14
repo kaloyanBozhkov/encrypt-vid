@@ -321,7 +321,7 @@ const processInput = async ({
         setProcessingMsg('Preview time!')
 
         // let the preview show for a little
-        await new Promise((res) => setTimeout(res, 1000))
+        await new Promise((res) => setTimeout(res, 2000))
     }
 
     setProcessingMsg(`Saving output from "${fileName}"`)

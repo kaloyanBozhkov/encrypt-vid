@@ -17,7 +17,7 @@ export type WebcamSizeState = Resolution | 'loading' | 'denied'
 const MainPage = () => {
     const previewSettings = useContext(previewSettingsContext),
         [webcamSize, setWebcamSize] = useState<WebcamSizeState>('loading'),
-        [processingMsg, setProcessingMsg] = useState<string | 'Done!'>('opa'),
+        [processingMsg, setProcessingMsg] = useState<string | 'Done!'>(''),
         [isProcessing, setIsProcessing] = useState(false),
         [step, setStep] = useState(0),
         SettingsMemoized = useMemo(
@@ -62,9 +62,7 @@ const MainPage = () => {
         let intervalId: ReturnType<typeof setInterval> | undefined = undefined
 
         if (processingMsg && processingMsg !== 'Done!')
-            intervalId = setInterval(() => {
-                setStep((prev) => (prev + 1 > 3 ? 0 : prev + 1))
-            }, 500)
+            intervalId = setInterval(() => setStep((prev) => (prev + 1 > 3 ? 0 : prev + 1)), 500)
 
         return () => intervalId && clearInterval(intervalId)
     }, [processingMsg])

@@ -173,9 +173,9 @@ const renderSettings = ({
                 radius="xl"
                 compact
                 uppercase
-                onClick={() => setVisible((p) => !p)}
+                onClick={() => (inactive ? undefined : setVisible((p) => !p))}
             >
-                {isVisible ? 'Hide' : 'Show renderSettings'}
+                {isVisible ? (inactive ? '...' : 'Hide') : 'Show settings'}
             </Button>
             <div>
                 <p>- Settings -</p>
