@@ -1,8 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
 
-import { previewSettingsContext } from 'context/previewSettings/previewSettings.contex'
-import type { Resolution } from 'types/common'
-
 import OperationStatus from 'components/molecules/OperationStatus/OperationStatus.molecule'
 
 import Settings from 'components/organisms/Settings/Settings.organism'
@@ -10,7 +7,11 @@ import WebcamCanvas from 'components/organisms/WebcamCanvas/WebcamCanvas.organis
 
 import MainLayout from 'components/layouts/MainLayout/Main.layout'
 
+import { previewSettingsContext } from 'context/previewSettings/previewSettings.contex'
+
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
+
+import type { Resolution } from 'types/common'
 
 export type WebcamSizeState = Resolution | 'loading' | 'denied'
 
@@ -65,7 +66,7 @@ const MainPage = () => {
     useEffect(() => {
         let intervalId: ReturnType<typeof setInterval> | undefined = undefined
 
-        if (processingMsg && processingMsg !== 'Done!')
+        if (processingMsg && !['Done!', 'Preview time!'].includes(processingMsg))
             intervalId = setInterval(() => setStep((prev) => (prev + 1 > 3 ? 0 : prev + 1)), 500)
 
         return () => intervalId && clearInterval(intervalId)
@@ -76,7 +77,10 @@ const MainPage = () => {
         if (processingMsg === 'Done!') {
             setStep(0)
             timeoutId = setTimeout(() => setProcessingMsg(''), 500)
+        } else if (processingMsg === 'Preview time!') {
+            setStep(0)
         }
+
         return () => timeoutId && clearTimeout(timeoutId)
     }, [processingMsg])
 

@@ -1,11 +1,13 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
-import { RenderSettings, renderSettingsContext } from 'context/renderSettings/renderSettings.contex'
-import useResize from 'hooks/useResize/useResize'
-
 import Dropzone from 'components/organisms/Dropzone/Dropzone.organism'
 
 import type { WebcamSizeState } from 'components/page/Main.page'
+
+import useFilesPaste from 'hooks/useFilesPaste/useFilesPaste'
+import useResize from 'hooks/useResize/useResize'
+
+import { RenderSettings, renderSettingsContext } from 'context/renderSettings/renderSettings.contex'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -23,6 +25,8 @@ import { useInputState } from '@mantine/hooks'
 
 import styles from './settings.module.scss'
 
+const ALLOWED_MIME_TYPES = [MIME_TYPES.mp4, 'video/quicktime', MIME_TYPES.jpeg, MIME_TYPES.png]
+
 const defaultSliderProps = {
     marks: [
         { value: 0, label: '0' },
@@ -33,7 +37,7 @@ const defaultSliderProps = {
     precision: 5,
 }
 
-const renderSettings = ({
+const Settings = ({
     inactive,
     onConfigReady,
     webcamSize,
@@ -59,23 +63,23 @@ const renderSettings = ({
             g: 0,
             b: 0,
         }),
+        { pastedFiles, clearPastedFile, clearPastedFiles } = useFilesPaste({
+            mimeTypes: ALLOWED_MIME_TYPES,
+        }),
         [files, setFiles] = useState<File[]>([]),
         onClear = useCallback((fileName) => {
             setFiles((prev) => prev.filter((currContent) => currContent.name !== fileName))
+            // might have to remove from pasted ones too
+            clearPastedFile(fileName)
         }, []),
         dropZoneMemoized = useMemo(
             () => (
                 <InputWrapper label="Files">
                     <Dropzone
-                        onDrop={setFiles}
+                        onDrop={(files) => setFiles((prev) => [...prev, ...files])}
                         onClear={onClear}
                         files={files}
-                        accept={[
-                            MIME_TYPES.mp4,
-                            'video/quicktime',
-                            MIME_TYPES.jpeg,
-                            MIME_TYPES.png,
-                        ]}
+                        accept={ALLOWED_MIME_TYPES}
                     />
                 </InputWrapper>
             ),
@@ -164,6 +168,14 @@ const renderSettings = ({
     useEffect(() => {
         renderSettings.setActiveAlgorithm(effect)
     }, [effect])
+
+    useEffect(() => {
+        // clear duplicates
+        const newPasted = pastedFiles.filter(
+            (pf) => files.filter(({ name }) => name === pf.name).length === 0
+        )
+        setFiles((prev) => [...prev, ...newPasted])
+    }, [pastedFiles])
 
     return (
         <div className={styles.settings} data-is-visible={isVisible && !inactive}>
@@ -367,7 +379,12 @@ const renderSettings = ({
                         compact
                         uppercase
                         className={styles.submitBtn}
-                        onClick={() => onConfigReady(files, renderSettings, () => setFiles([]))}
+                        onClick={() =>
+                            onConfigReady(files, renderSettings, () => {
+                                setFiles([])
+                                clearPastedFiles()
+                            })
+                        }
                         disabled={!files.length}
                     >
                         Submit <FontAwesomeIcon icon={faPaperPlane} />
@@ -384,4 +401,4 @@ const renderSettings = ({
     )
 }
 
-export default renderSettings
+export default Settings

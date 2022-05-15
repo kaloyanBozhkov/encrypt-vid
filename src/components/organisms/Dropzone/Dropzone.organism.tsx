@@ -58,9 +58,11 @@ const Dropzone = ({
             className={styles.dropzone}
             data-active={!!files.length}
             {...props}
-            onDrop={(files) => {
+            onDrop={(newFiles) => {
                 setStatus('accepted')
-                onDrop(files)
+                onDrop(
+                    newFiles.filter((newF) => !files.map(({ name }) => name).includes(newF.name))
+                )
             }}
             onReject={(files) => {
                 setStatus('rejected')

@@ -1,9 +1,11 @@
+import { getPixels, savePixels } from 'ndarray-pixels'
+
 import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
 import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
-import { getPixels, savePixels } from 'ndarray-pixels'
-import type { Resolution } from 'types/common'
 
 import { createFFmpeg } from '@ffmpeg/ffmpeg'
+
+import type { Resolution } from 'types/common'
 
 import { drawImageFittingWithinParentBounds } from './canvas'
 import { runAlgorithm } from './helpers'

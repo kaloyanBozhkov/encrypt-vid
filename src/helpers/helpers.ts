@@ -1,5 +1,6 @@
 import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
 import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
+
 import type { PixelInfo } from 'types/common'
 
 import { getFormattedAvg } from './canvas'

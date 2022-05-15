@@ -1,5 +1,7 @@
 import React from 'react'
 
+import MainPage from 'components/page/Main.page'
+
 import {
     PreviewSettingsProvider,
     previewSettings,
@@ -8,8 +10,6 @@ import {
     RenderSettingsProvider,
     renderSettings,
 } from 'context/renderSettings/renderSettings.contex'
-
-import MainPage from 'components/page/Main.page'
 
 import 'scss/global.scss'
 
