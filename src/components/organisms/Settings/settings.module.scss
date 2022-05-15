@@ -7,6 +7,11 @@
     color: $onPrimary;
     font-size: 2rem;
 
+    // enable pointer events cuz they were disabled on parent nav layout
+    > * {
+        pointer-events: auto;
+    }
+
     &[data-is-visible="true"] {
         > div:first-of-type {
             transform: translateX(0);
