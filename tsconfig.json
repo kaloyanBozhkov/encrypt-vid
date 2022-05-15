@@ -10,8 +10,8 @@
         "strict": true,
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
-        "module": "CommonJS",
-        "moduleResolution": "node",
+        "module": "ESNext",
+        "moduleResolution": "NodeNext",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
@@ -19,8 +19,5 @@
         "downlevelIteration": true,
         "baseUrl": "./src"
     },
-    "include": ["src"],
-    "ts-node": {
-        "files": true
-    }
+    "include": ["src"]
 }

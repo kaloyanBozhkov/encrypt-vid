@@ -1,5 +1,6 @@
 {
     "name": "encrypt-vid",
+    "homepage": "https://kaloyanbozhkov.com/encrypt-vid",
     "version": "0.1.0",
     "private": true,
     "dependencies": {
