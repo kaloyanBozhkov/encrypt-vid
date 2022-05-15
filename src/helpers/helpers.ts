@@ -1,5 +1,6 @@
 import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
 import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
+import type { PixelInfo } from 'types/common'
 
 import { getFormattedAvg } from './canvas'
 
@@ -121,8 +122,6 @@ export const getAveragePixelInfoPerGroupedBlockOfPixels = (
     }
     return groupedPixelsMatrix
 }
-
-export type PixelInfo = { r: number; g: number; b: number; a: number }
 
 export const formattedBlockOfPixelsToImage = (
     formattedArr: PixelInfo[][],

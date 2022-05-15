@@ -1,7 +1,8 @@
 import type { PreviewSettings } from 'context/previewSettings/previewSettings.contex'
 import type { RenderSettings } from 'context/renderSettings/renderSettings.contex'
+import type { PixelInfo } from 'types/common'
 
-import { PixelInfo, calculateLuminance, formattedBlockOfPixelsToImage } from './helpers'
+import { calculateLuminance, formattedBlockOfPixelsToImage } from './helpers'
 
 export const renderGroupPixelsAsLetters = ({
     formattedAvg,
