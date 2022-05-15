@@ -20,6 +20,7 @@ const MainPage = () => {
         [processingMsg, setProcessingMsg] = useState<string | 'Done!'>(''),
         [isProcessing, setIsProcessing] = useState(false),
         [step, setStep] = useState(0),
+        [copied, setCopied] = useState(false),
         SettingsMemoized = useMemo(
             () => (
                 <Settings
@@ -51,7 +52,10 @@ const MainPage = () => {
             ),
             [webcamSize, isProcessing]
         ),
-        WebacmCanvasMemoized = useMemo(() => <WebcamCanvas />, [])
+        WebacmCanvasMemoized = useMemo(
+            () => <WebcamCanvas setCopied={() => setCopied(true)} />,
+            [setCopied]
+        )
 
     // once preview plays we have media stream and can determine webcam resolution
     useEffect(() => {
@@ -76,9 +80,20 @@ const MainPage = () => {
         return () => timeoutId && clearTimeout(timeoutId)
     }, [processingMsg])
 
+    useEffect(() => {
+        let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined
+        if (copied) timeoutId = setTimeout(() => setCopied(false), 2000)
+        return () => timeoutId && clearTimeout(timeoutId)
+    }, [copied])
+
     return (
         <MainLayout menu={SettingsMemoized}>
-            {processingMsg && <OperationStatus label={processingMsg} step={step} />}
+            {processingMsg && (
+                <OperationStatus label={processingMsg} step={step} location="top-center" />
+            )}
+            {copied && (
+                <OperationStatus label="Text Copied!" type="message" location="bottom-right" />
+            )}
             {WebacmCanvasMemoized}
         </MainLayout>
     )

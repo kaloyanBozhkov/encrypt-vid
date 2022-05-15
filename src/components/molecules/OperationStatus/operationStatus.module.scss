@@ -1,6 +1,18 @@
 @import "scss/breakpoints.scss";
 @import "scss/variables.scss";
 
+@keyframes popIn {
+    from {
+        transform: scale(0);
+    }
+    80% {
+        transform: scale(1.1);
+    }
+    to {
+        transform: scale(1);
+    }
+}
+
 .operationStatus {
     position: fixed;
     top: 0;
@@ -9,13 +21,38 @@
     bottom: 0;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
     padding: $marginUnit;
     z-index: 10;
 
+    &[data-location="top-center"] {
+        justify-content: flex-start;
+        align-items: center;
+        p {
+            margin: 0 3rem;
+        }
+    }
+    &[data-location="bottom-right"] {
+        justify-content: flex-end;
+        align-items: flex-end;
+        p {
+            margin: 3rem;
+            animation: popIn ease-in forwards 200ms;
+        }
+    }
+
+    @include breakpoint(tabletBig, portrait) {
+        &[data-location="bottom-right"] {
+            margin: 1rem;
+        }
+    }
+
+    @include breakpoint(tabletBig, landscape) {
+        &[data-location="bottom-right"] {
+            margin: 1rem;
+        }
+    }
+
     p {
-        margin: 0 3rem;
         font-size: 1rem;
         color: $onPrimary;
         position: relative;
@@ -23,85 +60,90 @@
         padding: 0.5rem 1rem;
         border-radius: 5px;
 
-        &::after {
-            content: "";
-            position: absolute;
-            bottom: 0;
-            top: 0;
-            left: 100%;
-            display: flex;
-            background-color: $primary;
-            width: 3rem;
-            border-radius: 5px;
-            justify-content: center;
-            align-items: center;
-            padding: 0.5rem;
-            height: 0.4rem;
-            top: 100%;
-            left: 0;
-            right: 0;
-            margin: 0 auto;
-            margin-top: 1rem;
-        }
-
-        &[data-step="0"] {
-            &::after {
-                display: none;
-            }
-        }
-
-        &[data-step="1"] {
-            &::after {
-                content: ".";
-            }
-        }
-
-        &[data-step="2"] {
-            &::after {
-                content: "..";
-            }
-        }
-
-        &[data-step="3"] {
-            &::after {
-                content: "...";
-            }
-        }
-
         @mixin bigScreen {
             border-radius: 5px;
-
-            &[data-step]:not([data-step="0"]) {
-                border-bottom-right-radius: 0;
-                border-top-right-radius: 0;
-            }
-
             font-size: 1.5rem;
+        }
+    }
 
+    &[data-type="load"] {
+        p {
             &::after {
-                justify-content: flex-start;
-                align-items: center;
-                border-radius: 5px;
-                border-bottom-right-radius: 5px;
-                border-bottom-left-radius: 0;
-                border-top-right-radius: 5px;
-                border-top-left-radius: 0;
-                height: 100%;
-                padding: 0 0.5rem;
-                width: 3rem;
-                top: unset;
-                left: 100%;
-                right: unset;
+                content: "";
+                position: absolute;
                 bottom: 0;
+                top: 0;
+                left: 100%;
+                display: flex;
+                background-color: $primary;
+                width: 3rem;
+                border-radius: 5px;
+                justify-content: center;
+                align-items: center;
+                padding: 0.5rem;
+                height: 0.4rem;
+                top: 100%;
+                left: 0;
+                right: 0;
+                margin: 0 auto;
+                margin-top: 1rem;
             }
-        }
 
-        @include breakpoint(tabletBig, portrait) {
-            @include bigScreen;
-        }
+            &[data-step="0"] {
+                &::after {
+                    display: none;
+                }
+            }
 
-        @include breakpoint(tabletBig, landscape) {
-            @include bigScreen;
+            &[data-step="1"] {
+                &::after {
+                    content: ".";
+                }
+            }
+
+            &[data-step="2"] {
+                &::after {
+                    content: "..";
+                }
+            }
+
+            &[data-step="3"] {
+                &::after {
+                    content: "...";
+                }
+            }
+
+            @mixin bigScreen {
+                &[data-step]:not([data-step="0"]) {
+                    border-bottom-right-radius: 0;
+                    border-top-right-radius: 0;
+                }
+
+                &::after {
+                    justify-content: flex-start;
+                    align-items: center;
+                    border-radius: 5px;
+                    border-bottom-right-radius: 5px;
+                    border-bottom-left-radius: 0;
+                    border-top-right-radius: 5px;
+                    border-top-left-radius: 0;
+                    height: 100%;
+                    padding: 0 0.5rem;
+                    width: 3rem;
+                    top: unset;
+                    left: 100%;
+                    right: unset;
+                    bottom: 0;
+                }
+            }
+
+            @include breakpoint(tabletBig, portrait) {
+                @include bigScreen;
+            }
+
+            @include breakpoint(tabletBig, landscape) {
+                @include bigScreen;
+            }
         }
     }
 }

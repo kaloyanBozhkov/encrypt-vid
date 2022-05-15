@@ -7,7 +7,7 @@ import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
-const WebcamCanvas = () => {
+const WebcamCanvas = ({ setCopied }: { setCopied?: () => void }) => {
     const previewSettings = useContext(previewSettingsContext),
         renderSettings = useContext(renderSettingsContext),
         canvasRef = useRef<HTMLCanvasElement>(null),
@@ -42,7 +42,17 @@ const WebcamCanvas = () => {
             </div>
             <div className={styles.outputCanvas}>
                 {/*  size controlled by ctx in playPreview */}
-                <canvas ref={canvasRef} onClick={previewSettings.copyCurrentFrameText} />
+                <canvas
+                    ref={canvasRef}
+                    onClick={
+                        renderSettings.activeAlgorithm === renderSettings.algorithms.letters
+                            ? () => {
+                                  previewSettings.copyCurrentFrameText()
+                                  setCopied?.()
+                              }
+                            : undefined
+                    }
+                />
             </div>
         </div>
     )
