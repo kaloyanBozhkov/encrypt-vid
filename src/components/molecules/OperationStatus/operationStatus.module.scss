@@ -35,8 +35,16 @@
         justify-content: flex-end;
         align-items: flex-end;
         p {
-            margin: 0 auto;
             animation: popIn ease-in forwards 200ms;
+            margin: 0 auto;
+
+            @include breakpoint(tabletBig, portrait) {
+                margin: unset;
+            }
+
+            @include breakpoint(tabletBig, landscape) {
+                margin: unset;
+            }
         }
     }
 

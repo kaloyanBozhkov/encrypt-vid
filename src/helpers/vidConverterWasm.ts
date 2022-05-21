@@ -8,7 +8,7 @@ import { createFFmpeg } from '@ffmpeg/ffmpeg'
 import type { Resolution } from 'types/common'
 
 import { drawImageFittingWithinParentBounds } from './canvas'
-import { runAlgorithm } from './helpers'
+import { downloadFile, runAlgorithm } from './helpers'
 
 const worker = createFFmpeg({
     logger: (msg) => console.log(msg),
@@ -37,14 +37,6 @@ const readFile = (file: File) =>
 
         fileReader.readAsArrayBuffer(file)
     })
-
-const downloadBlob = ({ fileName, url }: { fileName: string; url: string }) => {
-    const a = document.createElement('a')
-    a.setAttribute('download', fileName)
-    a.setAttribute('href', url)
-    a.click()
-    a.remove()
-}
 
 const renderLetterFrameForEachImageBuffer = ({
     files,
@@ -328,7 +320,7 @@ const processInput = async ({
 
     setProcessingMsg(`Saving output from "${fileName}"`)
 
-    downloadBlob({ url, fileName })
+    downloadFile({ url, fileName })
     if (outputFileName) filesToClean.push(outputFileName)
 
     // eslint-disable-next-line

@@ -1,0 +1,14 @@
+@import "scss/variables.scss";
+@import "scss/breakpoints.scss";
+@import "scss/mixins.scss";
+.actionsWrapper {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin: $marginUnit;
+
+    > .button {
+        @include button($fontSize: 1rem);
+        border-radius: 5px;
+    }
+}

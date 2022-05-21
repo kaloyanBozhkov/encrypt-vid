@@ -1,5 +1,6 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
+import Actions from 'components/molecules/Actions/Actions.organism'
 import OperationStatus from 'components/molecules/OperationStatus/OperationStatus.molecule'
 
 import Settings from 'components/organisms/Settings/Settings.organism'
@@ -9,6 +10,9 @@ import MainLayout from 'components/layouts/MainLayout/Main.layout'
 
 import { previewSettingsContext } from 'context/previewSettings/previewSettings.contex'
 
+import { useClipboard } from '@mantine/hooks'
+
+import { downloadFile } from 'helpers/helpers'
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
 
 import type { Resolution } from 'types/common'
@@ -21,7 +25,7 @@ const MainPage = () => {
         [processingMsg, setProcessingMsg] = useState<string | 'Done!'>(''),
         [isProcessing, setIsProcessing] = useState(false),
         [step, setStep] = useState(0),
-        [copied, setCopied] = useState(false),
+        { copy: onCopyToClipboard, copied } = useClipboard({ timeout: 1500 }),
         SettingsMemoized = useMemo(
             () => (
                 <Settings
@@ -54,14 +58,18 @@ const MainPage = () => {
             [webcamSize, isProcessing]
         ),
         WebacmCanvasMemoized = useMemo(
-            () => <WebcamCanvas setCopied={() => setCopied(true)} />,
-            [setCopied]
-        )
+            () => <WebcamCanvas onCopyToClipboard={onCopyToClipboard} />,
+            [onCopyToClipboard]
+        ),
+        saveFile = useCallback(() => {
+            const imageUrl = previewSettings.ctx!.canvas.toDataURL('image/jpg')
+            downloadFile({ fileName: 'frame', url: imageUrl })
+        }, [])
 
     // once preview plays we have media stream and can determine webcam resolution
     useEffect(() => {
         previewSettings.setWebcamSize = setWebcamSize
-    })
+    }, [])
 
     useEffect(() => {
         let intervalId: ReturnType<typeof setInterval> | undefined = undefined
@@ -84,14 +92,8 @@ const MainPage = () => {
         return () => timeoutId && clearTimeout(timeoutId)
     }, [processingMsg])
 
-    useEffect(() => {
-        let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined
-        if (copied) timeoutId = setTimeout(() => setCopied(false), 2000)
-        return () => timeoutId && clearTimeout(timeoutId)
-    }, [copied])
-
     return (
-        <MainLayout menu={SettingsMemoized}>
+        <MainLayout menu={SettingsMemoized} actions={<Actions onSave={saveFile} />}>
             {processingMsg && (
                 <OperationStatus label={processingMsg} step={step} location="top-center" />
             )}

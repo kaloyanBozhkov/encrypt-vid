@@ -115,7 +115,7 @@ export const renderGroupPixelsAsLetters = ({
                 ctx.fillStyle = `rgba(${r},${g},${b},${aToScale0To1})`
 
                 ctx.fillText(
-                    chars[key] || chars[chars.length - 1],
+                    key >= darkCharsetStatic.length ? chars[charCounter] : darkCharsetStatic[key],
                     centerShift_x + cellIdx * groupBy + groupBy / 2,
                     centerShift_y + rowIdx * groupBy + groupBy / 2,
                     groupBy

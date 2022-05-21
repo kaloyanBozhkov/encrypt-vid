@@ -1,0 +1,33 @@
+@import "scss/variables.scss";
+
+@mixin button($fontSize, $width: auto, $height: auto) {
+    color: $onPrimary;
+    border: dashed $onPrimary 1px;
+    padding: $baseUnit 2 * $baseUnit;
+    font-size: $fontSize;
+    height: $height;
+    width: $width;
+    transition: 0.2s;
+
+    &[disabled] {
+        opacity: 0.5;
+    }
+
+    svg {
+        margin-left: 0.8rem;
+        transform: scale(0.8);
+        transition: all 0.5s;
+    }
+
+    &:hover {
+        background: none;
+        text-decoration: underline;
+        background-color: $onPrimary;
+        color: darken($textDimmed, 10%);
+
+        svg {
+            margin-left: 0.8rem;
+            transform: scale(1);
+        }
+    }
+}

@@ -6,7 +6,9 @@ import type { WebcamSizeState } from 'components/page/Main.page'
 
 import useFilesPaste from 'hooks/useFilesPaste/useFilesPaste'
 import useResize from 'hooks/useResize/useResize'
+import useWebcamSelect from 'hooks/useWebcamSelect/useWebcamSelect'
 
+import { previewSettingsContext } from 'context/previewSettings/previewSettings.contex'
 import { RenderSettings, renderSettingsContext } from 'context/renderSettings/renderSettings.contex'
 
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
@@ -51,6 +53,7 @@ const Settings = ({
     webcamSize: WebcamSizeState
 }) => {
     const renderSettings = useContext(renderSettingsContext),
+        previewSettings = useContext(previewSettingsContext),
         [groupBy, setGroupBy] = useInputState(15),
         [matrixMode, setMatrixMode] = useState(false),
         [customCharsMode, setCustomCharsMode] = useState(false),
@@ -109,7 +112,8 @@ const Settings = ({
                 />
             ),
             [darkChars]
-        )
+        ),
+        { webcamDevices, setActiveWebcam, activeWebcam } = useWebcamSelect()
 
     useResize({ fn: setVisible })
 
@@ -177,6 +181,10 @@ const Settings = ({
         setFiles((prev) => [...prev, ...newPasted])
     }, [pastedFiles])
 
+    useEffect(() => {
+        if (activeWebcam) previewSettings.changeActiveWebcam!(activeWebcam.deviceId)
+    }, [activeWebcam])
+
     return (
         <div className={styles.settings} data-is-visible={isVisible && !inactive}>
             <Button
@@ -192,6 +200,17 @@ const Settings = ({
             <div>
                 <p>- Settings -</p>
                 <div>
+                    <InputWrapper>
+                        <NativeSelect
+                            label="Preview Device"
+                            placeholder="Pick webcam to use for preview"
+                            value={activeWebcam?.label}
+                            data={webcamDevices.map(({ label }) => label)}
+                            onChange={({ currentTarget: { value: label } }) =>
+                                setActiveWebcam({ label })
+                            }
+                        />
+                    </InputWrapper>
                     <InputWrapper
                         label={
                             webcamSize !== 'denied'
@@ -230,6 +249,11 @@ const Settings = ({
                                 setEffect(value.toLowerCase() as 'tiles' | 'letters')
                             }
                         />
+                        {effect === 'letters' && (
+                            <p className={styles.note}>
+                                * You can click on the screen to copy as text
+                            </p>
+                        )}
                     </InputWrapper>
                     <InputWrapper label="Modes" className={styles.switches}>
                         <Switch

@@ -5,10 +5,11 @@ import { Resolution } from 'types/common'
 export type PreviewSettings = {
     ctx: CanvasRenderingContext2D | null
     currentFrameText: string
-    readonly copyCurrentFrameText: (this: PreviewSettings) => Promise<void>
     stopLiveRendering: null | (() => void)
-    startLiveRendering: null | (() => void)
+    startLiveRendering: null | (() => () => void)
     setWebcamSize: null | ((size: Resolution) => void)
+    activeWebcamId: string | null
+    changeActiveWebcam: ((this: PreviewSettings, deviceId: string) => void) | null
     persistGate: boolean
 }
 
@@ -17,12 +18,11 @@ export const previewSettings: PreviewSettings = {
     stopLiveRendering: null,
     startLiveRendering: null,
     setWebcamSize: null,
+    activeWebcamId: null,
+    changeActiveWebcam: null,
     currentFrameText: '',
     // used to stop webcam rendering
     persistGate: true,
-    copyCurrentFrameText() {
-        return navigator.clipboard.writeText(this.currentFrameText)
-    },
 }
 
 export const previewSettingsContext = createContext<typeof previewSettings>(previewSettings)

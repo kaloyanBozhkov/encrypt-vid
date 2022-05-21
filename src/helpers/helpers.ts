@@ -5,6 +5,13 @@ import type { PixelInfo } from 'types/common'
 
 import { getFormattedAvg } from './canvas'
 
+export const downloadFile = ({ fileName, url }: { fileName: string; url: string }) => {
+    const a = document.createElement('a')
+    a.setAttribute('download', fileName)
+    a.setAttribute('href', url)
+    a.click()
+    a.remove()
+}
 export const calculateLuminance = (
     { r, g, b }: PixelInfo,
     luminanceWeights: RenderSettings['luminanceWeights']
@@ -129,6 +136,9 @@ export const formattedBlockOfPixelsToImage = (
     groupBy: number,
     ctx: CanvasRenderingContext2D
 ) => {
+    // config is weird, probably groupBy is higher than total pixels and formattedArr is empty
+    if (!formattedArr[0]) return ctx.createImageData(1, 1)
+
     const w = formattedArr[0].length * groupBy,
         h = formattedArr.length * groupBy,
         blocksPerRow = w / groupBy,

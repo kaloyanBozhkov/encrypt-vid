@@ -12,9 +12,18 @@ export const playPreview = (
     previewSettings: PreviewSettings,
     renderSettings: RenderSettings
 ) => {
+    // no active webcam = no live preview
+    if (!previewSettings.activeWebcamId) return () => undefined
+
+    let startedStream: MediaStream | null
+
     navigator.mediaDevices
-        .getUserMedia({ video: { width: 9999 }, audio: false })
+        .getUserMedia({
+            video: { width: 9999, deviceId: previewSettings.activeWebcamId },
+            audio: false,
+        })
         .then((stream) => {
+            startedStream = stream
             vid.srcObject = stream
 
             let webcamSize = { width: 0, height: 0 }
@@ -72,13 +81,7 @@ export const playPreview = (
                     animateWebcamIntoCanvas()
                 })
                 .catch((err) => {
-                    // @TODO show play UI?
-                    alert(
-                        'There seems to have been an issue playing the webcam preview :( \n The video processing should still work though :)'
-                    )
-
                     console.error(err)
-
                     previewSettings.setWebcamSize!({
                         width: 0,
                         height: 0,
@@ -89,4 +92,14 @@ export const playPreview = (
             console.error('issue', err)
             alert('There seems to have been an issue playing the webcam preview :(')
         })
+
+    // cleanup fn
+    return () => {
+        vid.pause()
+
+        if (startedStream)
+            startedStream.getTracks().forEach((track) => {
+                track.stop()
+            })
+    }
 }

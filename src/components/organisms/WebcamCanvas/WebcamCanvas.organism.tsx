@@ -7,7 +7,11 @@ import { playPreview } from 'helpers/previewRenderer'
 
 import styles from './webcamCanvas.module.scss'
 
-const WebcamCanvas = ({ setCopied }: { setCopied?: () => void }) => {
+const WebcamCanvas = ({
+    onCopyToClipboard,
+}: {
+    onCopyToClipboard?: (valueToCopy: unknown) => void
+}) => {
     const previewSettings = useContext(previewSettingsContext),
         renderSettings = useContext(renderSettingsContext),
         canvasRef = useRef<HTMLCanvasElement>(null),
@@ -27,10 +31,21 @@ const WebcamCanvas = ({ setCopied }: { setCopied?: () => void }) => {
 
         previewSettings.startLiveRendering = () => {
             previewSettings.persistGate = true
-            playPreview(ctx, vidRef.current!, vidCtx, previewSettings, renderSettings)
+
+            // return cleanup fn
+            return playPreview(ctx, vidRef.current!, vidCtx, previewSettings, renderSettings)
         }
 
-        previewSettings.startLiveRendering()
+        let cleanupFn = previewSettings.startLiveRendering()
+
+        previewSettings.changeActiveWebcam = (deviceId) => {
+            previewSettings.activeWebcamId = deviceId
+            cleanupFn()
+            cleanupFn = playPreview(ctx, vidRef.current!, vidCtx, previewSettings, renderSettings)
+        }
+
+        // return cleanup fn with closure
+        return () => cleanupFn()
     }, [])
 
     return (
@@ -46,10 +61,7 @@ const WebcamCanvas = ({ setCopied }: { setCopied?: () => void }) => {
                     ref={canvasRef}
                     onClick={
                         renderSettings.activeAlgorithm === renderSettings.algorithms.letters
-                            ? () => {
-                                  previewSettings.copyCurrentFrameText()
-                                  setCopied?.()
-                              }
+                            ? () => onCopyToClipboard?.(previewSettings.currentFrameText)
                             : undefined
                     }
                 />
