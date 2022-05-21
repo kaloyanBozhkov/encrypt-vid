@@ -39,6 +39,12 @@ const defaultSliderProps = {
     precision: 5,
 }
 
+const DeniedWebcam = (
+    <InputWrapper label="No webcam to preview config with :(" className={styles.contentSize}>
+        {null}
+    </InputWrapper>
+)
+
 const Settings = ({
     inactive,
     onConfigReady,
@@ -200,36 +206,36 @@ const Settings = ({
             <div>
                 <p>- Settings -</p>
                 <div>
-                    <InputWrapper>
-                        <NativeSelect
-                            label="Preview Device"
-                            placeholder="Pick webcam to use for preview"
-                            value={activeWebcam?.label}
-                            data={webcamDevices.map(({ label }) => label)}
-                            onChange={({ currentTarget: { value: label } }) =>
-                                setActiveWebcam({ label })
-                            }
-                        />
-                    </InputWrapper>
-                    <InputWrapper
-                        label={
-                            webcamSize !== 'denied'
-                                ? 'Webcam Preview Size'
-                                : 'No webcam to preview config with :('
-                        }
-                        className={styles.contentSize}
-                    >
-                        {webcamSize !== 'denied' ? (
-                            webcamSize === 'loading' ? (
-                                <p>Loading..</p>
-                            ) : (
-                                <>
-                                    <p>{`Width: ${webcamSize.width}`} px</p>
-                                    <p>{`Height: ${webcamSize.height} px`}</p>
-                                </>
-                            )
-                        ) : null}
-                    </InputWrapper>
+                    {webcamDevices.length > 0 && webcamSize !== 'denied' ? (
+                        <>
+                            <InputWrapper>
+                                <NativeSelect
+                                    label="Preview Device"
+                                    placeholder="Pick webcam to use for preview"
+                                    value={activeWebcam?.label}
+                                    data={webcamDevices.map(({ label }) => label)}
+                                    onChange={({ currentTarget: { value: label } }) =>
+                                        setActiveWebcam({ label })
+                                    }
+                                />
+                            </InputWrapper>
+                            <InputWrapper
+                                label={'Webcam Preview Size'}
+                                className={styles.contentSize}
+                            >
+                                {webcamSize === 'loading' ? (
+                                    <p>Loading..</p>
+                                ) : (
+                                    <>
+                                        <p>{`Width: ${webcamSize.width}`} px</p>
+                                        <p>{`Height: ${webcamSize.height} px`}</p>
+                                    </>
+                                )}
+                            </InputWrapper>
+                        </>
+                    ) : (
+                        DeniedWebcam
+                    )}
                     <InputWrapper label="Group By">
                         <NumberInput
                             min={1}

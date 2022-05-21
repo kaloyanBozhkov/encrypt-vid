@@ -82,10 +82,6 @@ export const playPreview = (
                 })
                 .catch((err) => {
                     console.error(err)
-                    previewSettings.setWebcamSize!({
-                        width: 0,
-                        height: 0,
-                    })
                 })
         })
         .catch((err) => {

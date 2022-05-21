@@ -6,7 +6,9 @@ const useWebcamSelect = () => {
 
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then((devices) => {
-            const webcams = devices.filter(({ kind }) => kind === 'videoinput')
+            const webcams = devices.filter(
+                ({ kind, deviceId }) => kind === 'videoinput' && deviceId
+            )
             setWebcamDevices(webcams)
             setActiveWebcam(webcams[0] || null)
         })
