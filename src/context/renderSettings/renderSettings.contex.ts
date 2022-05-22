@@ -1,5 +1,7 @@
 import { createContext } from 'react'
 
+import { COLORS } from 'reactives/Styles.reactive'
+
 import {
     renderBlurryPixels,
     renderGroupPixelsAsLetters,
@@ -12,6 +14,7 @@ export type RenderSettings = {
     withJustGreen: boolean
     withSpeechUpdatedText: boolean
     groupBy: number
+    canvasBgColor: string
     readonly charsObj: {
         darkChars: string
         customChars: string
@@ -50,6 +53,7 @@ export const renderSettings: RenderSettings = {
         darkChars: '.,_-~:',
         speech: 'word',
     },
+    canvasBgColor: COLORS.canvasBg,
     algorithms: {
         letters: renderGroupPixelsAsLetters,
         tiles: renderGroupPixelsAsSquares,

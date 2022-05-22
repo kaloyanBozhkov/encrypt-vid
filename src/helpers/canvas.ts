@@ -1,6 +1,6 @@
 import { Resolution } from 'types/common'
 
-import { getAveragePixelInfoPerGroupedBlockOfPixels } from './helpers'
+import { downloadFile, getAveragePixelInfoPerGroupedBlockOfPixels } from './helpers'
 
 export const getFormattedAvg = ({
     ctx,
@@ -152,4 +152,9 @@ export const drawImageFittingWithinParentBounds = ({
     )
 
     return prevImageSize
+}
+
+export const downloadFrameFromCanvas = ({ ctx }: { ctx: CanvasRenderingContext2D }) => {
+    const imageUrl = ctx.canvas.toDataURL('image/jpg')
+    downloadFile({ fileName: 'frame', url: imageUrl })
 }

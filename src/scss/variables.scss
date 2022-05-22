@@ -11,4 +11,4 @@ $onPrimary: white;
 $secondary: #8000ff;
 $tertiary: black;
 
-$canvasBg: --black;
+$canvasBg: var(--canvasBg);

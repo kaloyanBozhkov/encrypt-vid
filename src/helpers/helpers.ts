@@ -31,14 +31,19 @@ export const runAlgorithm = ({
     renderSettings: RenderSettings
     previewSettings: PreviewSettings
 }) => {
-    const { groupBy, withJustGreen: greenMode } = renderSettings
+    const { groupBy, withJustGreen: greenMode, canvasBgColor } = renderSettings,
+        ctx = previewSettings.ctx!
 
     const formattedAvg = getFormattedAvg({
-        ctx: previewSettings.ctx!,
+        ctx,
         ...(image ? { image } : { imageData }),
         groupBy,
         greenMode,
     })
+
+    // set bg color
+    ctx.fillStyle = canvasBgColor
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
     renderSettings.activeAlgorithm({
         formattedAvg,

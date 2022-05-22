@@ -23,6 +23,7 @@
     flex-direction: column;
     padding: $marginUnit;
     z-index: 10;
+    pointer-events: none;
 
     &[data-location="top-center"] {
         justify-content: flex-start;

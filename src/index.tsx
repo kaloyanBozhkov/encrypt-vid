@@ -11,8 +11,4 @@ if (!container) throw Error('No root container?!')
 
 const root = ReactDOMClient.createRoot(container)
 
-root.render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
-)
+root.render(<App />)

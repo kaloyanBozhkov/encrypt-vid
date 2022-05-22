@@ -12,7 +12,7 @@ import { previewSettingsContext } from 'context/previewSettings/previewSettings.
 
 import { useClipboard } from '@mantine/hooks'
 
-import { downloadFile } from 'helpers/helpers'
+import { downloadFrameFromCanvas } from 'helpers/canvas'
 import { processFilesWithConfig } from 'helpers/vidConverterWasm'
 
 import type { Resolution } from 'types/common'
@@ -61,10 +61,13 @@ const MainPage = () => {
             () => <WebcamCanvas onCopyToClipboard={onCopyToClipboard} />,
             [onCopyToClipboard]
         ),
-        saveFile = useCallback(() => {
-            const imageUrl = previewSettings.ctx!.canvas.toDataURL('image/jpg')
-            downloadFile({ fileName: 'frame', url: imageUrl })
-        }, [])
+        onSaveFile = useCallback(
+            () =>
+                downloadFrameFromCanvas({
+                    ctx: previewSettings.ctx!,
+                }),
+            []
+        )
 
     // once preview plays we have media stream and can determine webcam resolution
     useEffect(() => {
@@ -93,7 +96,7 @@ const MainPage = () => {
     }, [processingMsg])
 
     return (
-        <MainLayout menu={SettingsMemoized} actions={<Actions onSave={saveFile} />}>
+        <MainLayout menu={SettingsMemoized} actions={<Actions onSave={onSaveFile} />}>
             {processingMsg && (
                 <OperationStatus label={processingMsg} step={step} location="top-center" />
             )}

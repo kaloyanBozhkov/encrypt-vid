@@ -2,6 +2,8 @@ import React from 'react'
 
 import MainPage from 'components/page/Main.page'
 
+import { useGlobalStyles } from 'hooks/useStyleVariables/useStyleVariables'
+
 import {
     PreviewSettingsProvider,
     previewSettings,
@@ -14,6 +16,8 @@ import {
 import 'scss/global.scss'
 
 function App() {
+    useGlobalStyles()
+
     return (
         <RenderSettingsProvider value={renderSettings}>
             <PreviewSettingsProvider value={previewSettings}>
