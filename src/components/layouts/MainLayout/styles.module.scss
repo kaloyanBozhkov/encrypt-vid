@@ -39,11 +39,12 @@
         height: 100%;
         z-index: 0;
     }
+
     > section {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+        bottom: $marginUnit;
+        left: $marginUnit;
+        right: $marginUnit;
         z-index: 1;
     }
 }

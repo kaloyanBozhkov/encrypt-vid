@@ -11,7 +11,7 @@
         "forceConsistentCasingInFileNames": true,
         "noFallthroughCasesInSwitch": true,
         "module": "esnext",
-        "moduleResolution": "nodenext",
+        "moduleResolution": "node",
         "resolveJsonModule": true,
         "isolatedModules": true,
         "noEmit": true,
@@ -19,5 +19,6 @@
         "downlevelIteration": true,
         "baseUrl": "./src"
     },
-    "include": ["src"]
+    "include": ["src"],
+    "exclude": ["src/mantine-core"]
 }

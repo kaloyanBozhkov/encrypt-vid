@@ -96,7 +96,7 @@ const MainPage = () => {
     }, [processingMsg])
 
     return (
-        <MainLayout menu={SettingsMemoized} actions={<Actions onSave={onSaveFile} />}>
+        <MainLayout menu={SettingsMemoized} actions={!copied && <Actions onSave={onSaveFile} />}>
             {processingMsg && (
                 <OperationStatus label={processingMsg} step={step} location="top-center" />
             )}

@@ -51,13 +51,13 @@
 
     @include breakpoint(tabletBig, portrait) {
         &[data-location="bottom-right"] {
-            margin: 1rem;
+            margin: 0;
         }
     }
 
     @include breakpoint(tabletBig, landscape) {
         &[data-location="bottom-right"] {
-            margin: 1rem;
+            margin: 0;
         }
     }
 

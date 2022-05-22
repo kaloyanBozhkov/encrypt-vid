@@ -1,14 +1,22 @@
 @import "scss/variables.scss";
-@import "scss/breakpoints.scss";
 @import "scss/mixins.scss";
+
 .actionsWrapper {
     display: flex;
-    justify-content: flex-end;
+    justify-content: center;
     gap: 1rem;
-    margin: $marginUnit;
+
+    @include breakpoint(tabletBig, portrait) {
+        justify-content: flex-end;
+    }
+
+    @include breakpoint(tabletBig, landscape) {
+        justify-content: flex-end;
+    }
 
     > .button {
-        @include button($fontSize: 1rem);
+        opacity: 0.5;
+        @include button($fontSize: 0.6rem);
         border-radius: 5px;
     }
 }

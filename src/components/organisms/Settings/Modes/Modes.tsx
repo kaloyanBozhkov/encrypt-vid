@@ -5,7 +5,7 @@ import type { RenderSettings } from 'context/renderSettings/renderSettings.conte
 
 import { InputWrapper, Slider, Switch, Textarea } from '@mantine/core'
 
-import CanvasBGColorPicker from './CanvasBgColorPicker/CanvasBgColorPicker'
+import CanvasBGColorPicker from './BgColorPicker/CanvasBgColorPicker'
 import styles from './modes.module.scss'
 
 const defaultSliderProps = {

@@ -9,11 +9,11 @@ const MainLayout = ({
 }: {
     menu: ReactElement
     children: ReactNode
-    actions: ReactElement
+    actions: ReactElement | false
 }) => (
     <div className={styles.mainLayout}>
         <nav>{menu}</nav>
-        <section>{actions}</section>
+        {actions && <section>{actions}</section>}
         <main>{children}</main>
     </div>
 )
