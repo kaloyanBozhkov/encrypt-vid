@@ -10,6 +10,10 @@
                 {
                     "key": "Cross-Origin-Opener-Policy",
                     "value": "same-origin"
+                },
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(self); microphone=(self)"
                 }
             ]
         }
