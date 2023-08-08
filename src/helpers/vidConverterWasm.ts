@@ -13,7 +13,7 @@ import { downloadFile, runAlgorithm } from './helpers'
 const worker = createFFmpeg({
     logger: (msg) => console.log(msg),
     progress: (p) => console.log('p', p),
-    corePath: '/encrypt-vid/dist/ffmpeg-core/ffmpeg-core.js',
+    corePath: '/dist/ffmpeg-core/ffmpeg-core.js',
 })
 
 // store names of file sused for temporary processing
