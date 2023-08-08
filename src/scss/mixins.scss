@@ -56,3 +56,34 @@
         }
     }
 }
+
+@mixin thinScrollBar($isVertical: true, $isVisibleOnHover: false) {
+    // for desktop show the scrollbar but make it thin!
+    ::-webkit-scrollbar {
+        // for mobile do not show the scroll bar, user can scroll without it
+        // @include breakpoint(tabletBig) {
+        //   display: none;
+        // }
+
+        @if ($isVertical) {
+            width: 4px;
+            height: 0;
+        } @else {
+            width: 0;
+            height: 4px;
+        }
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background-color: #a3a3a3;
+        border-radius: 4px;
+    }
+
+    @if ($isVisibleOnHover) {
+        &:not(:hover) {
+            &::-webkit-scrollbar-thumb {
+                background-color: transparent;
+            }
+        }
+    }
+}
