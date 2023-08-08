@@ -23,7 +23,10 @@ import styles from './settings.module.scss'
 const ALLOWED_MIME_TYPES = [MIME_TYPES.mp4, 'video/quicktime', MIME_TYPES.jpeg, MIME_TYPES.png]
 
 const DeniedWebcam = (
-    <InputWrapper label="No webcam to preview config with :(" className={styles.contentSize}>
+    <InputWrapper
+        label="No webcam to preview config with, check scurity permissions to allow access."
+        className={styles.contentSize}
+    >
         {null}
     </InputWrapper>
 )
