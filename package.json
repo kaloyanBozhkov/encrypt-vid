@@ -1,6 +1,6 @@
 {
     "name": "encrypt-vid",
-    "homepage": "https://kaloyanbozhkov.com/encrypt-vid",
+    "homepage": "https://encrypt-vid.vercel.app",
     "version": "0.1.0",
     "private": true,
     "dependencies": {
