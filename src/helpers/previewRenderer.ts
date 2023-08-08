@@ -20,7 +20,7 @@ export const playPreview = (
     navigator.mediaDevices
         .getUserMedia({
             video: { width: 9999, deviceId: previewSettings.activeWebcamId },
-            audio: true,
+            audio: false,
         })
         .then((stream) => {
             startedStream = stream
