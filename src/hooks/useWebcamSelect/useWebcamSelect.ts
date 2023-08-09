@@ -5,12 +5,18 @@ const useWebcamSelect = () => {
         [activeWebcam, setActiveWebcam] = useState<MediaDeviceInfo | null>(null)
 
     useEffect(() => {
-        navigator.mediaDevices.enumerateDevices().then((devices) => {
-            const webcams = devices.filter(
-                ({ kind, deviceId }) => kind === 'videoinput' && deviceId
-            )
-            setWebcamDevices(webcams)
-            setActiveWebcam(webcams[0] || null)
+        navigator.mediaDevices.getUserMedia({ video: true }).then(() => {
+            if (navigator.mediaDevices.enumerateDevices)
+                navigator.mediaDevices.enumerateDevices().then((devices) => {
+                    const webcams = devices.filter(
+                        ({ kind, deviceId }) => kind === 'videoinput' && deviceId
+                    )
+                    setWebcamDevices(webcams)
+                    setActiveWebcam(webcams[0] || null)
+                })
+            else {
+                console.log('navigator.mediaDevices.enumerateDevices is not supportef')
+            }
         })
     }, [])
 
