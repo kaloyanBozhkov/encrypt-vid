@@ -19,7 +19,11 @@ export const playPreview = (
 
     navigator.mediaDevices
         .getUserMedia({
-            video: { width: 9999, deviceId: previewSettings.activeWebcamId },
+            video: {
+                width: { ideal: 9999 },
+                height: { ideal: 9999 },
+                deviceId: previewSettings.activeWebcamId,
+            },
             audio: false,
         })
         .then((stream) => {
